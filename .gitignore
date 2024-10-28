@@ -1,2 +1,8 @@
 .env
+.vscode/
 _test.py
+
+__pycache__/
+*.egg-info
+
+ai-forecasting-datasets/
