@@ -13,11 +13,7 @@ repos:
     rev: 7.1.1
     hooks:
     - id: flake8
-- repo: local
-  hooks:
-    - id: jupyter-nb-clear-output
-      name: jupyter-nb-clear-output
-      files: \.ipynb$
-      stages: [pre-commit]
-      language: system
-      entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+-   repo: https://github.com/srstevenson/nb-clean
+    rev: 4.0.1
+    hooks:
+    - id: nb-clean
