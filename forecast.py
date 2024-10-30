@@ -46,19 +46,21 @@ forecasting_question = (
 single_model_repetitions = 3
 gpt_responses = []
 
-for i in range(single_model_repetitions):
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "user", "content": f"{forecasting_question}"},
-            {"role": "system", "content": f"{context_prompt}"},
-        ],
-        max_tokens=100,
-        temperature=2,
-        top_p=0.8,
-    )
 
-    reply = response.choices[0].message.content
+response = openai.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "user", "content": f"{forecasting_question}"},
+        {"role": "system", "content": f"{context_prompt}"},
+    ],
+    max_tokens=100,
+    temperature=2,
+    top_p=0.8,
+    n=single_model_repetitions,
+)
+
+for i in range(single_model_repetitions):
+    reply = response.choices[i].message.content
     # print("ChatGPT's response:", reply)
     try:
         number = validate_asterisk_number(reply)
