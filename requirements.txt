@@ -37,6 +37,7 @@ identify==2.6.1
 idna==3.10
 ipykernel==6.29.5
 ipython==8.28.0
+ipython-genutils==0.2.0
 ipywidgets==8.1.5
 isoduration==20.11.0
 isort==5.13.2
@@ -50,9 +51,13 @@ jsonschema-specifications==2024.10.1
 jupyter==1.1.1
 jupyter-console==6.6.3
 jupyter-events==0.10.0
+jupyter-highlight-selected-word==0.2.0
 jupyter-lsp==2.2.5
 jupyter_client==8.6.3
+jupyter_contrib_core==0.4.2
+jupyter_contrib_nbextensions==0.7.0
 jupyter_core==5.7.2
+jupyter_nbextensions_configurator==0.6.4
 jupyter_server==2.14.2
 jupyter_server_terminals==0.5.3
 jupyterlab==4.2.5
@@ -60,6 +65,7 @@ jupyterlab_pygments==0.3.0
 jupyterlab_server==2.27.3
 jupyterlab_widgets==3.0.13
 kiwisolver==1.4.7
+lxml==5.3.0
 MarkupSafe==3.0.2
 matplotlib==3.9.2
 matplotlib-inline==0.1.7
