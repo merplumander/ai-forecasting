@@ -14,6 +14,7 @@ from src.query.language_models import (
     OpenAIModel,
     XAIModel,
 )
+from src.query.ModelEnsample import ModelEnsample
 
 
 def validate_asterisk_number(text):
@@ -124,3 +125,15 @@ print(response)
 llama_model = LLAMAModel(os.environ.get("LLAMA_API_KEY"))
 response = llama_model.make_forecast(forecasting_question, context_prompt)
 print(response)
+
+# %%
+open_ai_model = OpenAIModel(api_key=os.environ.get("OPENAI_API_KEY"))
+anthropic_model = AnthropicModel(os.environ.get("ANTHROPIC_API_KEY"))
+gemini_model = GeminiModel(os.environ.get("GEMINI_API_KEY"))
+xai_model = XAIModel(os.environ.get("XAI_API_KEY"))
+llama_model = LLAMAModel(os.environ.get("LLAMA_API_KEY"))
+ensample = ModelEnsample(
+    [open_ai_model, anthropic_model, gemini_model, xai_model, llama_model]
+)
+# %%
+ensample_responses = ensample.make_forecast(forecasting_question, context_prompt)
