@@ -67,20 +67,22 @@ class LanguageModel(ABC):
         pass
 
     @abstractmethod
-    def __query_model(self, forecasting_question: str, context: str, **kwargs):
+    def _query_model(self, forecasting_question: str, context: str, **kwargs):
         pass
 
 
 class OpenAIModel(LanguageModel):
 
     def __init__(self, api_key, model_version="gpt-3.5-turbo"):
-        openai.api_key = api_key
         self.model_version = model_version
+        self.client = openai.OpenAI(
+            api_key=api_key,
+        )
 
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
-        response = self.__query_model(forecasting_question, context, **kwargs)
+        response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.choices[0].message.content
         if verbose_response:
             print("Given answer was:\n", reply)
@@ -89,7 +91,7 @@ class OpenAIModel(LanguageModel):
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
-        response = self.__query_model(forecasting_question, context, **kwargs)
+        response = self._query_model(forecasting_question, context, **kwargs)
         if verbose_response:
             reply = response.choices[0].message.content
             print("Given answer was:\n", reply)
@@ -101,18 +103,19 @@ class OpenAIModel(LanguageModel):
             top_probs.append(np.exp(top_logprob.logprob))
         return top_tokens, top_probs
 
-    def __query_model(self, forecasting_question, context, **kwargs):
+    def _query_model(self, forecasting_question: str, context: str, **kwargs):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("top_logprobs", 20)
         kwargs.setdefault("max_tokens", 512)
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
-                {"role": "user", "content": f"{forecasting_question}"},
-                {"role": "system", "content": f"{context}"},
+                {"role": "user", "content": forecasting_question},
+                {"role": "system", "content": context},
             ],
+            logprobs=True,
             **kwargs,
         )
         return response
@@ -127,13 +130,13 @@ class AnthropicModel(LanguageModel):
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
-        response = self.__query_model(forecasting_question, context, **kwargs)
+        response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.content[0].text
         if verbose_response:
             print("Given answer was:\n", reply)
         return extract_probability(reply)
 
-    def __query_model(self, forecasting_question, context, **kwargs):
+    def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
             key in kwargs for key in ["model", "system", "messages"]
         ), "Invalid keyword argument"
@@ -165,12 +168,12 @@ class GeminiModel(LanguageModel):
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
-        response = self.__query_model(forecasting_question, context, **kwargs)
+        response = self._query_model(forecasting_question, context, **kwargs)
         if verbose_response:
             print("Given answer was:\n", response.text)
         return extract_probability(response.text)
 
-    def __query_model(self, forecasting_question, context, **kwargs):
+    def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
             key in kwargs for key in ["response_logprobs"]
         ), "Invalid keyword argument"
@@ -206,13 +209,13 @@ class XAIModel(LanguageModel):
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
-        response = self.__query_model(forecasting_question, context, **kwargs)
+        response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.choices[0].message.content
         if verbose_response:
             print("Given answer was:\n", reply)
         return extract_probability(reply)
 
-    def __query_model(self, forecasting_question, context, **kwargs):
+    def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
@@ -248,14 +251,14 @@ class LLAMAModel(LanguageModel):
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
-        response = self.__query_model(forecasting_question, context, **kwargs)
+        response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.choices[0].message.content
         if verbose_response:
             print("Given answer was:\n", reply)
 
         return extract_probability(reply)
 
-    def __query_model(self, forecasting_question, context, **kwargs):
+    def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"

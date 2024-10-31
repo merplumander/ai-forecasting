@@ -110,9 +110,7 @@ response = anthropic_model.make_forecast(
 )
 print(response)
 # %%
-gemini_model = GeminiModel(
-    os.environ.get("GEMINI_API_KEY"), model_version="gemini-1.0-pro"
-)
+gemini_model = GeminiModel(os.environ.get("GEMINI_API_KEY"))
 response = gemini_model.make_forecast(
     forecasting_question,
     context_prompt,
