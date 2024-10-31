@@ -5,6 +5,15 @@ import re
 import numpy as np
 import openai
 from dotenv import load_dotenv
+from matplotlib import pyplot as plt
+
+from src.query.language_models import (
+    AnthropicModel,
+    GeminiModel,
+    LLAMAModel,
+    OpenAIModel,
+    XAIModel,
+)
 
 
 def validate_asterisk_number(text):
@@ -26,15 +35,14 @@ def validate_asterisk_number(text):
 
 
 # %%
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+load_dotenv(".env")
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # %%
 # load context prompt
 with open("context_prompt.txt", "r") as file:
     # Read the entire content of the file
     context_prompt = file.read()
-
 
 # %%
 forecasting_question = (
@@ -83,3 +91,38 @@ print(
     f" [{lower:.0f}%, {upper:.0f}%]"
 )
 # %%
+with open("context_prompt_logprobs.txt", "r") as file:
+    # Read the entire content of the file
+    context_prompt = file.read()
+# %%
+open_ai_model = OpenAIModel(api_key=os.environ.get("OPENAI_API_KEY"))
+response = open_ai_model.make_forecast(
+    forecasting_question,
+    context_prompt,
+)
+print(response)
+
+# %%
+anthropic_model = AnthropicModel(os.environ.get("ANTHROPIC_API_KEY"))
+response = anthropic_model.make_forecast(
+    forecasting_question,
+    context_prompt,
+)
+print(response)
+# %%
+gemini_model = GeminiModel(
+    os.environ.get("GEMINI_API_KEY"), model_version="gemini-1.0-pro"
+)
+response = gemini_model.make_forecast(
+    forecasting_question,
+    context_prompt,
+)
+print(response)
+# %%
+xai_model = XAIModel(os.environ.get("XAI_API_KEY"))
+response = xai_model.make_forecast(forecasting_question, context_prompt)
+print(response)
+# %%
+llama_model = LLAMAModel(os.environ.get("LLAMA_API_KEY"))
+response = llama_model.make_forecast(forecasting_question, context_prompt)
+print(response)
