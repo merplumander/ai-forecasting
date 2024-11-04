@@ -15,6 +15,7 @@ babel==2.16.0
 beautifulsoup4==4.12.3
 black==24.10.0
 bleach==6.1.0
+blinker==1.8.2
 cachetools==5.5.0
 certifi==2024.8.30
 cffi==1.17.1
@@ -33,6 +34,7 @@ executing==2.1.0
 fastjsonschema==2.20.0
 filelock==3.16.1
 flake8==7.1.1
+Flask==3.0.3
 fonttools==4.54.1
 fqdn==1.5.1
 frozenlist==1.5.0
@@ -60,6 +62,7 @@ ipython-genutils==0.2.0
 ipywidgets==8.1.5
 isoduration==20.11.0
 isort==5.13.2
+itsdangerous==2.2.0
 jedi==0.19.1
 Jinja2==3.1.4
 jiter==0.6.1
@@ -149,7 +152,7 @@ setuptools==75.2.0
 six==1.16.0
 sniffio==1.3.1
 soupsieve==2.6
--e git+ssh://git@github.com/merplumander/ai-forecasting.git@b97932286c4ca4d7f59cbaf104c01767e7c9992c#egg=src
+-e git+ssh://git@github.com/merplumander/ai-forecasting.git@835a0e9a759f6498c419bd0d19910a23ecba5814#egg=src
 stack-data==0.6.3
 terminado==0.18.1
 tinycss2==1.3.0
@@ -168,6 +171,7 @@ wcwidth==0.2.13
 webcolors==24.8.0
 webencodings==0.5.1
 websocket-client==1.8.0
+Werkzeug==3.1.1
 wheel==0.44.0
 widgetsnbextension==4.0.13
 yarl==1.17.1
