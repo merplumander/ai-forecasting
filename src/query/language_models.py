@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 import anthropic
 import google.generativeai as genai
@@ -19,9 +20,9 @@ class LanguageModel(ABC):
         self,
         forecasting_question: str,
         context: str,
-        verbose_response: bool = False,
+        verbose_reasoning: bool = False,
         **kwargs,
-    ) -> str:
+    ) -> Tuple[int, str]:
         """Make a forecast using the model.
 
         Parameters
@@ -30,13 +31,13 @@ class LanguageModel(ABC):
             Question to be forecasted.
         context : str
             System prompt and context.
-        verbose_response : bool, optional
+        verbose_reasoning : bool, optional
             Print model output., by default False
 
         Returns
         -------
-        str
-            Probability predicted by the model.
+        Tuple[int, str]
+            Tuple with forecasted answer and reasoning.
         """
         pass
 
@@ -46,7 +47,7 @@ class LanguageModel(ABC):
         self,
         forecasting_question: str,
         context: str,
-        verbose_response: bool = False,
+        verbose_reasoning: bool = False,
         **kwargs,
     ) -> tuple:
         """Make a forecast using the model and return multiple possible
@@ -58,7 +59,7 @@ class LanguageModel(ABC):
             Question to be forecasted.
         context : str
             System prompt and context.
-        verbose_response : bool, optional
+        verbose_reasoning : bool, optional
              Print model output., by default False
 
         Returns
@@ -83,20 +84,24 @@ class OpenAIModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self,
+        forecasting_question,
+        context,
+        verbose_reasoning=False,
+        **kwargs,
     ):
         response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.choices[0].message.content
-        if verbose_response:
+        if verbose_reasoning:
             print("Given answer was:\n", reply)
-        return extract_probability(reply)
+        return (extract_probability(reply), reply)
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self, forecasting_question, context, verbose_reasoning=False, **kwargs
     ):
         response = self._query_model(forecasting_question, context, **kwargs)
-        if verbose_response:
+        if verbose_reasoning:
             reply = response.choices[0].message.content
             print("Given answer was:\n", reply)
         top_logprobs = response.choices[0].logprobs.content[-1].top_logprobs
@@ -133,13 +138,17 @@ class AnthropicModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self,
+        forecasting_question,
+        context,
+        verbose_reasoning=False,
+        **kwargs,
     ):
         response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.content[0].text
-        if verbose_response:
+        if verbose_reasoning:
             print("Given answer was:\n", reply)
-        return extract_probability(reply)
+        return (extract_probability(reply), reply)
 
     def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
@@ -158,7 +167,7 @@ class AnthropicModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self, forecasting_question, context, verbose_reasoning=False, **kwargs
     ):
         # TODO The API does not support logprobs, is the best solution to run the
         #   model multiple times?
@@ -173,12 +182,16 @@ class GeminiModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self,
+        forecasting_question,
+        context,
+        verbose_reasoning=False,
+        **kwargs,
     ):
         response = self._query_model(forecasting_question, context, **kwargs)
-        if verbose_response:
+        if verbose_reasoning:
             print("Given answer was:\n", response.text)
-        return extract_probability(response.text)
+        return (extract_probability(response.text), response.text)
 
     def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
@@ -197,7 +210,7 @@ class GeminiModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self, forecasting_question, context, verbose_reasoning=False, **kwargs
     ):
         # the problem here is that even though we can access the logprobs, we
         # can get only the top 5 tokens and their probabilities, additionaly the
@@ -216,13 +229,17 @@ class XAIModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self,
+        forecasting_question,
+        context,
+        verbose_reasoning=False,
+        **kwargs,
     ):
         response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.choices[0].message.content
-        if verbose_response:
+        if verbose_reasoning:
             print("Given answer was:\n", reply)
-        return extract_probability(reply)
+        return (extract_probability(reply), reply)
 
     def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
@@ -241,7 +258,7 @@ class XAIModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self, forecasting_question, context, verbose_reasoning=False, **kwargs
     ):
         # TODO this does not work for some reason, should I try the CURL API
         # without using OpenAI or ist the API just broken? --> turns out, the
@@ -260,14 +277,17 @@ class LLAMAModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self,
+        forecasting_question,
+        context,
+        verbose_reasoning=False,
+        **kwargs,
     ):
         response = self._query_model(forecasting_question, context, **kwargs)
         reply = response.choices[0].message.content
-        if verbose_response:
+        if verbose_reasoning:
             print("Given answer was:\n", reply)
-
-        return extract_probability(reply)
+        return (extract_probability(reply), reply)
 
     def _query_model(self, forecasting_question, context, **kwargs):
         assert not any(
@@ -291,7 +311,7 @@ class LLAMAModel(LanguageModel):
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_response=False, **kwargs
+        self, forecasting_question, context, verbose_reasoning=False, **kwargs
     ):
         # for newer versions of the model (>= llama3.1-70b), the logprobs are
         # returned, but only for the tokens that are actually generated, not for the
