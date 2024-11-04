@@ -1,19 +1,20 @@
-import re
 from abc import ABC, abstractmethod
-from typing import List
 
 import anthropic
 import google.generativeai as genai
 import numpy as np
 import openai
-from llamaapi import LlamaAPI
 
-from src.query.utils import extract_probability
+from src.query.utils import extract_probability, retry_on_model_failure
 
 
 class LanguageModel(ABC):
 
+    def __init__(self, model_version):
+        self.model_version = model_version
+
     @abstractmethod
+    @retry_on_model_failure(max_retries=3)
     def make_forecast(
         self,
         forecasting_question: str,
@@ -40,6 +41,7 @@ class LanguageModel(ABC):
         pass
 
     @abstractmethod
+    @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
         self,
         forecasting_question: str,
@@ -74,11 +76,12 @@ class LanguageModel(ABC):
 class OpenAIModel(LanguageModel):
 
     def __init__(self, api_key, model_version="gpt-3.5-turbo"):
-        self.model_version = model_version
+        super().__init__(model_version)
         self.client = openai.OpenAI(
             api_key=api_key,
         )
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -88,6 +91,7 @@ class OpenAIModel(LanguageModel):
             print("Given answer was:\n", reply)
         return extract_probability(reply)
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -124,9 +128,10 @@ class OpenAIModel(LanguageModel):
 class AnthropicModel(LanguageModel):
 
     def __init__(self, api_key, model_version="claude-3-haiku-20240307"):
+        super().__init__(model_version)
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model_version = model_version
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -151,6 +156,7 @@ class AnthropicModel(LanguageModel):
         )
         return response
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -162,9 +168,10 @@ class AnthropicModel(LanguageModel):
 class GeminiModel(LanguageModel):
 
     def __init__(self, api_key, model_version="gemini-1.5-flash-8b"):
+        super().__init__(model_version)
         genai.configure(api_key=api_key)
-        self.model_version = model_version
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -178,8 +185,8 @@ class GeminiModel(LanguageModel):
             key in kwargs for key in ["response_logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("max_output_tokens", 512)
-        kwargs.setdefault("logprobs", 5)
-        config = genai.GenerationConfig(response_logprobs=True, **kwargs)
+        # kwargs.setdefault("logprobs", 5)
+        config = genai.GenerationConfig(response_logprobs=False, **kwargs)
         model = genai.GenerativeModel(
             model_name=self.model_version,
             generation_config=config,
@@ -188,6 +195,7 @@ class GeminiModel(LanguageModel):
         response = model.generate_content(forecasting_question)
         return response
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -200,12 +208,13 @@ class GeminiModel(LanguageModel):
 class XAIModel(LanguageModel):
 
     def __init__(self, api_key, model_version="grok-beta"):
-        self.model_version = model_version
+        super().__init__(model_version)
         self.client = openai.OpenAI(
             api_key=api_key,
             base_url="https://api.x.ai/v1",
         )
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -230,6 +239,7 @@ class XAIModel(LanguageModel):
         )
         return response
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -243,11 +253,12 @@ class XAIModel(LanguageModel):
 class LLAMAModel(LanguageModel):
 
     def __init__(self, api_key, model_version="llama3.1-8b"):
+        super().__init__(model_version)
         self.client = openai.OpenAI(
             api_key=api_key, base_url="https://api.llama-api.com"
         )
-        self.model_version = model_version
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):
@@ -278,6 +289,7 @@ class LLAMAModel(LanguageModel):
         )
         return response
 
+    @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_response=False, **kwargs
     ):

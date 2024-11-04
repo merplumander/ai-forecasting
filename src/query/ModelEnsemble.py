@@ -17,9 +17,7 @@ class ModelEnsemble:
         predicted_probabilities = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
-                executor.submit(
-                    model.make_forecast_retry, forecasting_question, context
-                )
+                executor.submit(model.make_forecast, forecasting_question, context)
                 for model in self.models
             ]
         for future in futures:
