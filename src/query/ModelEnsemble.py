@@ -1,3 +1,5 @@
+import concurrent
+
 import numpy as np
 
 
@@ -13,9 +15,13 @@ class ModelEnsemble:
                 "Using probabilities is not implemented for model ensembles."
             )
         predicted_probabilities = []
-        for model in self.models:
-            model_prediction = model.make_forecast(
-                forecasting_question, context, use_probabilities
-            )
-            predicted_probabilities.append(model_prediction)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(
+                    model.make_forecast_retry, forecasting_question, context
+                )
+                for model in self.models
+            ]
+        for future in futures:
+            predicted_probabilities.append(future.result())
         return predicted_probabilities
