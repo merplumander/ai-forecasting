@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class ModelEnsample:
+class ModelEnsemble:
     def __init__(self, models):
         self.models = models
 
@@ -10,7 +10,7 @@ class ModelEnsample:
     ):
         if use_probabilities:
             raise NotImplementedError(
-                "Using probabilities is not implemented for model ensamples."
+                "Using probabilities is not implemented for model ensembles."
             )
         predicted_probabilities = []
         for model in self.models:
