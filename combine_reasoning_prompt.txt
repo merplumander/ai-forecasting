@@ -4,4 +4,4 @@ Here they are:
 
 The median forecasted probability for the question to resolve with yes is {median_forecast}% and the 90% confidence interval of forecasted probabilities is {confidence_range_string}.
 
-Please summarize this info into one coherent reasoning and probabilistic forecast.
+Please summarize this info into one coherent reasoning and probabilistic forecast. Reply only with the aggregated explanation and probabilistic forecast without mentioning that you are aggregating several different reasonings.

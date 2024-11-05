@@ -1,6 +1,8 @@
 import re
 from functools import wraps
 
+import numpy as np
+
 
 def extract_probability(reply):
     probability = None
@@ -34,3 +36,29 @@ def retry_on_model_failure(max_retries=3):
         return wrapper
 
     return decorator
+
+
+def aggregate_forecasting_explanations(
+    question, reasonings, probabilities, language_model
+):
+    lower, median, upper = np.quantile(probabilities, [0.05, 0.50, 0.95])
+    confidence_range_string = f"[{lower}, {upper}]"
+    newline = "\n"
+    reasonings = f"{newline.join(
+        f"Reasoning {number}:\n{reasoning}\n"
+        for number, reasoning in enumerate(reasonings))}"
+    with open("combine_reasoning_prompt.txt", "r") as file:
+        # Read the entire content of the file
+        combine_prompt = file.read()
+
+    combine_prompt = combine_prompt.format(
+        question=question,
+        reasonings=reasonings,
+        median_forecast=median,
+        confidence_range_string=confidence_range_string,
+    )
+    response = language_model._query_model(
+        forecasting_question=combine_prompt, context="None"
+    )
+    aggregated_explanation = response.choices[0].message.content
+    return aggregated_explanation

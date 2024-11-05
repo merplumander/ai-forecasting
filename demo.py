@@ -12,6 +12,7 @@ from src.query.language_models import (
     XAIModel,
 )
 from src.query.ModelEnsemble import ModelEnsemble
+from src.query.utils import aggregate_forecasting_explanations
 
 app = Flask(__name__, template_folder="src/demo")
 
@@ -51,13 +52,22 @@ def ask():
         probability for probability in responses[0] if probability is not None
     ]
     lower, median, upper = np.quantile(probabilities, [0.05, 0.50, 0.95])
-    closest_response_idx = np.argmin(np.abs(median - probabilities))
-    explanation = responses[1][closest_response_idx]
+    # closest_response_idx = np.argmin(np.abs(median - probabilities))
+    # explanation = responses[1][closest_response_idx]
+    language_model = OpenAIModel(
+        api_key=os.environ.get("OPENAI_API_KEY"), model_version="gpt-4o"
+    )
+    aggregated_explanation = aggregate_forecasting_explanations(
+        question=question,
+        reasonings=responses[1],
+        probabilities=probabilities,
+        language_model=language_model,
+    )
     return jsonify(
         {
             "median": round(median, 2),
             "confidence_interval": (round(lower, 2), round(upper, 2)),
-            "explanation": explanation,
+            "explanation": aggregated_explanation,
         }
     )
 
