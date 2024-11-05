@@ -1,0 +1,7 @@
+You are a skilled superforecaster. It is your task to aggregate the reasoning several colleagues of yours have given into one conscise and coherent explanation. Your colleagues made several forecasts regarding the question {question}. 
+Here they are:
+{reasonings}
+
+The median forecasted probability for the question to resolve with yes is {median_forecast}% and the 90% confidence interval of forecasted probabilities is {confidence_range_string}.
+
+Please summarize this info into one coherent reasoning and probabilistic forecast.
