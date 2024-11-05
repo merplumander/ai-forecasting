@@ -76,7 +76,7 @@ class LanguageModel(ABC):
 
 class OpenAIModel(LanguageModel):
 
-    def __init__(self, api_key, model_version="gpt-3.5-turbo"):
+    def __init__(self, api_key, model_version="gpt-4o-mini"):
         super().__init__(model_version)
         self.client = openai.OpenAI(
             api_key=api_key,
