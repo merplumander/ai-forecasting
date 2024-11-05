@@ -4,5 +4,6 @@ _test.py
 
 __pycache__/
 *.egg-info
+.DS_Store
 
 ai-forecasting-datasets/
