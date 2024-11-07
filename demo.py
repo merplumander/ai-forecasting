@@ -48,9 +48,8 @@ def ask():
         question,
         CONTEXT,
     )
-    probabilities = [
-        probability for probability in responses[0] if probability is not None
-    ]
+    probabilities = [response[1] for response in responses if response[1] is not None]
+    print(probabilities)
     lower, median, upper = np.quantile(probabilities, [0.05, 0.50, 0.95])
     # closest_response_idx = np.argmin(np.abs(median - probabilities))
     # explanation = responses[1][closest_response_idx]

@@ -12,8 +12,9 @@ class ModelEnsemble:
         self,
         forecasting_question: str,
         context: str,
+        model_query_repeats=3,
         use_probabilities: bool = False,
-    ) -> Tuple[List[int], List[str]]:
+    ) -> List[Tuple[str, int, str]]:
         """Make a forecast using the ensemble of models.
 
         Parameters
@@ -22,20 +23,23 @@ class ModelEnsemble:
             Question to be forecasted.
         context : str
             System prompt and context.
+        model_query_repeats : int, optional
+            How many times the prompt should be repeated for each model, by default 3
         use_probabilities : bool, optional
             currently not implemented, by default False
 
         Returns
         -------
-        Tuple[List[int], List[str]]
-            Tuple with forecasted answers and explanations.
+        List[Tuple[str, int, str]]
+            List of tuples containing the model name, forecasted answer and explanation.
         """
         if use_probabilities:
             raise NotImplementedError(
                 "Using probabilities is not implemented for model ensembles."
             )
-        predicted_probabilities = []
-        explanations = []
+        query_list = [
+            model for model in self.models for _ in range(model_query_repeats)
+        ]
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -43,10 +47,10 @@ class ModelEnsemble:
                     forecasting_question,
                     context,
                 )
-                for model in self.models
+                for model in query_list
             ]
-        for future in futures:
+        results = []
+        for i, future in enumerate(futures):
             result = future.result()
-            predicted_probabilities.append(result[0])
-            explanations.append(result[1])
-        return (predicted_probabilities, explanations)
+            results.append((query_list[i], result[0], result[1]))
+        return results
