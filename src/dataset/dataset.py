@@ -14,7 +14,7 @@ class Question(ABC):
     title: str
     created_at: datetime.datetime
     resolved: bool
-    resolution: str
+    description: str = ""
 
 
 @dataclass
@@ -45,7 +45,8 @@ class MetaculusDataset:
             files = list(files)
             if len(files) == 0:
                 raise ValueError(
-                    "No dataset found. Set download_new_data=True to download the dataset."
+                    "No dataset found. Set download_new_data=True to download the"
+                    " dataset."
                 )
             newest_file = max(files)
             self.questions = pd.read_csv(os.path.join(path, newest_file), index_col=0)
@@ -68,7 +69,8 @@ class MetaculusDataset:
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["created_at"] > date]
         print(
-            f"Questions newer than {date}: {len(self.questions)} out of {question_count}"
+            f"Questions newer than {date}: {len(self.questions)} out of"
+            f" {question_count}"
         )
 
     def select_questions_with_status(self, status: str) -> pd.DataFrame:
@@ -80,8 +82,14 @@ class MetaculusDataset:
         ], f"Invalid status: {status}"
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["status"] == status]
+        if status == "resolved":
+            self.questions = self.questions[
+                (self.questions["resolution"] != "ambiguous")
+                and (self.questions["resolution"] != "annulled")
+            ]
         print(
-            f"Questions with status {status}: {len(self.questions)} out of {question_count}"
+            f"Questions with status {status}: {len(self.questions)} out of"
+            f" {question_count}"
         )
 
     def select_questions_with_forecast_type(self, forecast_type: str) -> pd.DataFrame:
@@ -94,7 +102,8 @@ class MetaculusDataset:
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["type"] == forecast_type]
         print(
-            f"Questions with type {forecast_type}: {len(self.questions)} out of {question_count}"
+            f"Questions with type {forecast_type}: {len(self.questions)} out of"
+            f" {question_count}"
         )
 
     def get_question(self, question_id: str) -> Question:
@@ -104,12 +113,19 @@ class MetaculusDataset:
         question_row = self.questions.loc[self.questions.index == question_id].iloc[0]
         forecast_type = question_row.type
         if forecast_type == "binary":
+            if question_row.resolution == "no":
+                resolution = False
+            elif question_row.resolution == "yes":
+                resolution = True
+            else:
+                resolution = None
             return BinaryQuestion(
                 question_id="metaculus-" + str(question_row.id),
                 title=question_row.title,
                 created_at=question_row.created_at,
                 resolved=question_row.status == "resolved",
-                resolution=question_row.resolution,
+                resolution=resolution,
+                description=question_row.description,
             )
         else:
             raise NotImplementedError(

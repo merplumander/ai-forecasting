@@ -20,7 +20,9 @@ def get_posts_with_offset_and_limit(offset=0, limit=1000) -> List:
     list
         List of questions.
     """
-    url = f"https://www.metaculus.com/api/posts/?offset={offset}&limit={limit}"
+    # get all question types except conditionals
+    url = f"https://www.metaculus.com/api/posts/?forecast_type=numeric%2Cdate%2Cbinary%2Cmultiple_choice%2Cgroup_of_questions&order_by=-published_at&limit={limit}&offset={offset}&with_cp=false"
+
     response = requests.get(url)
 
     if response.status_code == 200:
@@ -50,8 +52,22 @@ def get_all_metaculus_questions() -> pd.DataFrame:
             break
         questions.extend(batch)
         offset += limit  # Move to the next set of questions
+    posts_with_groups_of_questions = pd.DataFrame(questions).dropna(
+        subset=["group_of_questions"]
+    )
     questions = pd.DataFrame(questions).dropna(subset=["question"])
-    questions_df = pd.DataFrame(questions.question.to_list())
+    extracted_questions = []
+    for _, post in posts_with_groups_of_questions.iterrows():
+        for question in post["group_of_questions"]["questions"]:
+            print(question)
+            if question["description"] == "":
+                question["description"] = post["group_of_questions"]["description"]
+            if question["resolution_criteria"] == "":
+                question["resolution_criteria"] = post["group_of_questions"][
+                    "resolution_criteria"
+                ]
+            extracted_questions.append(question)
+    questions_df = pd.DataFrame(questions.question.to_list() + extracted_questions)
     questions_df["question_id"] = "metaculus-" + questions_df["id"].astype(str)
     questions_df.set_index("question_id", inplace=True)
     print("Total questions downloaded:", len(questions_df))
