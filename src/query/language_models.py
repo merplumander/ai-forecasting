@@ -364,12 +364,13 @@ class QwenModel(LanguageModel):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            api_key=self.api_key**kwargs,
+            api_key=self.api_key,
+            **kwargs,
         )
         if return_details:
             return response
         else:
-            return response.choices[0].message.content
+            return response.output.text
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(

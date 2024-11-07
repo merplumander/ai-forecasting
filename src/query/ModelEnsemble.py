@@ -3,9 +3,11 @@ from typing import List, Tuple
 
 import numpy as np
 
+from src.query.language_models import LanguageModel
+
 
 class ModelEnsemble:
-    def __init__(self, models):
+    def __init__(self, models: List[LanguageModel]):
         self.models = models
 
     def make_forecast(
@@ -52,5 +54,5 @@ class ModelEnsemble:
         results = []
         for i, future in enumerate(futures):
             result = future.result()
-            results.append((query_list[i], result[0], result[1]))
+            results.append((query_list[i].model_version, result[0], result[1]))
         return results
