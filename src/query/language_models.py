@@ -1,10 +1,13 @@
+import random
 from abc import ABC, abstractmethod
 from typing import Any, Tuple, Union
 
 import anthropic
+import dashscope
 import google.generativeai as genai
 import numpy as np
 import openai
+from mistralai import Mistral
 
 from src.query.utils import extract_probability, retry_on_model_failure
 
@@ -301,4 +304,75 @@ class LLAMAModel(LanguageModel):
         # for newer versions of the model (>= llama3.1-70b), the logprobs are
         # returned, but only for the tokens that are actually generated, not for the
         # top logprobs
+        raise NotImplementedError("The API does not support logprobs")
+
+
+class MistralModel(LanguageModel):
+
+    def __init__(self, api_key, model_version="mistral-small-2409"):
+        super().__init__(model_version)
+        self.client = Mistral(api_key=api_key)
+
+    def query_model(
+        self, user_prompt, system_prompt, return_details=False, **kwargs
+    ) -> Union[str, Any]:
+        assert not any(
+            key in kwargs for key in ["model", "messages", "logprobs"]
+        ), "Invalid keyword argument"
+        kwargs.setdefault("max_tokens", 512)
+        response = self.client.chat.complete(
+            model=self.model_version,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {"role": "user", "content": user_prompt},
+            ],
+            **kwargs,
+        )
+        if return_details:
+            return response
+        else:
+            return response.choices[0].message.content
+
+    @retry_on_model_failure(max_retries=3)
+    def make_forecast_with_probs(
+        self, forecasting_question, context, verbose_reasoning=False, **kwargs
+    ):
+        raise NotImplementedError("The API does not support logprobs")
+
+
+class QwenModel(LanguageModel):
+
+    def __init__(self, api_key, model_version="qwen-turbo"):
+        super().__init__(model_version)
+        dashscope.base_http_api_url = "https://dashscope-intl.aliyuncs.com/api/v1"
+        self.api_key = api_key
+
+    def query_model(
+        self, user_prompt, system_prompt, return_details=False, **kwargs
+    ) -> Union[str, Any]:
+        assert not any(
+            key in kwargs for key in ["model", "messages"]
+        ), "Invalid keyword argument"
+        kwargs.setdefault("max_tokens", 512)
+        kwargs.setdefault("seed", random.randint(1, 10000))
+        response = dashscope.Generation.call(
+            model=self.model_version,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            api_key=self.api_key**kwargs,
+        )
+        if return_details:
+            return response
+        else:
+            return response.choices[0].message.content
+
+    @retry_on_model_failure(max_retries=3)
+    def make_forecast_with_probs(
+        self, forecasting_question, context, verbose_reasoning=False, **kwargs
+    ):
         raise NotImplementedError("The API does not support logprobs")
