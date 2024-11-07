@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Any, Tuple, Union
 
 import anthropic
 import google.generativeai as genai
@@ -70,7 +70,32 @@ class LanguageModel(ABC):
         pass
 
     @abstractmethod
-    def _query_model(self, forecasting_question: str, context: str, **kwargs):
+    def query_model(
+        self,
+        user_prompt: str,
+        system_prompt: str,
+        return_details: bool = False,
+        **kwargs,
+    ) -> Union[str, Any]:
+        """Query the model with a user and system prompt.
+
+        Parameters
+        ----------
+        user_prompt : str
+            User prompt (specific task)
+        system_prompt : str
+            System prompt (general context and role description).
+        return_details : bool, optional
+            If True return all details the model's API return (attention: in
+            this case the returned values have not the same format for all
+            inherited classes). If True, only the response text is returned
+            (i.e. same format for all inherited classed). , by default False
+
+        Returns
+        -------
+        Union[str, Any]
+            Model response text (if return_details==False) or detailed response object.
+        """
         pass
 
 
@@ -90,8 +115,7 @@ class OpenAIModel(LanguageModel):
         verbose_reasoning=False,
         **kwargs,
     ):
-        response = self._query_model(forecasting_question, context, **kwargs)
-        reply = response.choices[0].message.content
+        reply = self.query_model(forecasting_question, context, **kwargs)
         if verbose_reasoning:
             print("Given answer was:\n", reply)
         return (extract_probability(reply), reply)
@@ -100,7 +124,9 @@ class OpenAIModel(LanguageModel):
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_reasoning=False, **kwargs
     ):
-        response = self._query_model(forecasting_question, context, **kwargs)
+        response = self.query_model(
+            forecasting_question, context, return_details=True, **kwargs
+        )
         if verbose_reasoning:
             reply = response.choices[0].message.content
             print("Given answer was:\n", reply)
@@ -112,7 +138,9 @@ class OpenAIModel(LanguageModel):
             top_probs.append(np.exp(top_logprob.logprob))
         return top_tokens, top_probs
 
-    def _query_model(self, forecasting_question: str, context: str, **kwargs):
+    def query_model(
+        self, user_prompt: str, system_prompt: str, return_details=False, **kwargs
+    ) -> Union[str, Any]:
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
@@ -121,13 +149,16 @@ class OpenAIModel(LanguageModel):
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
-                {"role": "user", "content": forecasting_question},
-                {"role": "system", "content": context},
+                {"role": "user", "content": user_prompt},
+                {"role": "system", "content": system_prompt},
             ],
             logprobs=True,
             **kwargs,
         )
-        return response
+        if return_details:
+            return response
+        else:
+            return response.choices[0].message.content
 
 
 class AnthropicModel(LanguageModel):
@@ -144,26 +175,30 @@ class AnthropicModel(LanguageModel):
         verbose_reasoning=False,
         **kwargs,
     ):
-        response = self._query_model(forecasting_question, context, **kwargs)
-        reply = response.content[0].text
+        reply = self.query_model(forecasting_question, context, **kwargs)
         if verbose_reasoning:
             print("Given answer was:\n", reply)
         return (extract_probability(reply), reply)
 
-    def _query_model(self, forecasting_question, context, **kwargs):
+    def query_model(
+        self, user_prompt, system_prompt, return_details=False, **kwargs
+    ) -> Union[str, Any]:
         assert not any(
             key in kwargs for key in ["model", "system", "messages"]
         ), "Invalid keyword argument"
         kwargs.setdefault("max_tokens", 512)
         response = self.client.messages.create(
             model=self.model_version,
-            system=context,
+            system=system_prompt,
             messages=[
-                {"role": "user", "content": f"{forecasting_question}"},
+                {"role": "user", "content": f"{user_prompt}"},
             ],
             **kwargs,
         )
-        return response
+        if return_details:
+            return response
+        else:
+            return response.content[0].text
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
@@ -188,12 +223,14 @@ class GeminiModel(LanguageModel):
         verbose_reasoning=False,
         **kwargs,
     ):
-        response = self._query_model(forecasting_question, context, **kwargs)
+        reply = self.query_model(forecasting_question, context, **kwargs)
         if verbose_reasoning:
-            print("Given answer was:\n", response.text)
-        return (extract_probability(response.text), response.text)
+            print("Given answer was:\n", reply)
+        return (extract_probability(reply), reply)
 
-    def _query_model(self, forecasting_question, context, **kwargs):
+    def query_model(
+        self, user_prompt, system_prompt, return_details=False, **kwargs
+    ) -> Union[str, Any]:
         assert not any(
             key in kwargs for key in ["response_logprobs"]
         ), "Invalid keyword argument"
@@ -203,10 +240,13 @@ class GeminiModel(LanguageModel):
         model = genai.GenerativeModel(
             model_name=self.model_version,
             generation_config=config,
-            system_instruction=context,
+            system_instruction=system_prompt,
         )
-        response = model.generate_content(forecasting_question)
-        return response
+        response = model.generate_content(user_prompt)
+        if return_details:
+            return response
+        else:
+            return response.text
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
@@ -235,13 +275,14 @@ class XAIModel(LanguageModel):
         verbose_reasoning=False,
         **kwargs,
     ):
-        response = self._query_model(forecasting_question, context, **kwargs)
-        reply = response.choices[0].message.content
+        reply = self.query_model(forecasting_question, context, **kwargs)
         if verbose_reasoning:
             print("Given answer was:\n", reply)
         return (extract_probability(reply), reply)
 
-    def _query_model(self, forecasting_question, context, **kwargs):
+    def query_model(
+        self, user_prompt, system_prompt, return_details=False, **kwargs
+    ) -> Union[str, Any]:
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
@@ -249,12 +290,15 @@ class XAIModel(LanguageModel):
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
-                {"role": "user", "content": f"{forecasting_question}"},
-                {"role": "system", "content": f"{context}"},
+                {"role": "user", "content": f"{user_prompt}"},
+                {"role": "system", "content": f"{system_prompt}"},
             ],
             **kwargs,
         )
-        return response
+        if return_details:
+            return response
+        else:
+            return response.choices[0].message.content
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
@@ -283,13 +327,14 @@ class LLAMAModel(LanguageModel):
         verbose_reasoning=False,
         **kwargs,
     ):
-        response = self._query_model(forecasting_question, context, **kwargs)
-        reply = response.choices[0].message.content
+        reply = self.query_model(forecasting_question, context, **kwargs)
         if verbose_reasoning:
             print("Given answer was:\n", reply)
         return (extract_probability(reply), reply)
 
-    def _query_model(self, forecasting_question, context, **kwargs):
+    def query_model(
+        self, user_prompt, system_prompt, return_details=False, **kwargs
+    ) -> Union[str, Any]:
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
@@ -300,14 +345,17 @@ class LLAMAModel(LanguageModel):
             messages=[
                 {
                     "role": "system",
-                    "content": context,
+                    "content": system_prompt,
                 },
-                {"role": "user", "content": forecasting_question},
+                {"role": "user", "content": user_prompt},
             ],
             logprobs=True,
             **kwargs,
         )
-        return response
+        if return_details:
+            return response
+        else:
+            return response.choices[0].message.content
 
     @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(

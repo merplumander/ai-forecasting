@@ -57,8 +57,7 @@ def aggregate_forecasting_explanations(
         median_forecast=median,
         confidence_range_string=confidence_range_string,
     )
-    response = language_model._query_model(
-        forecasting_question=combine_prompt, context="None"
+    aggregated_explanation = language_model.query_model(
+        user_prompt=combine_prompt, system_prompt="None"
     )
-    aggregated_explanation = response.choices[0].message.content
     return aggregated_explanation
