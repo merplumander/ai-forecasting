@@ -14,7 +14,6 @@ class LanguageModel(ABC):
     def __init__(self, model_version):
         self.model_version = model_version
 
-    @abstractmethod
     @retry_on_model_failure(max_retries=3)
     def make_forecast(
         self,
@@ -39,7 +38,10 @@ class LanguageModel(ABC):
         Tuple[int, str]
             Tuple with forecasted answer and reasoning.
         """
-        pass
+        reply = self.query_model(forecasting_question, context, **kwargs)
+        if verbose_reasoning:
+            print("Given answer was:\n", reply)
+        return (extract_probability(reply), reply)
 
     @abstractmethod
     @retry_on_model_failure(max_retries=3)
@@ -108,19 +110,6 @@ class OpenAIModel(LanguageModel):
         )
 
     @retry_on_model_failure(max_retries=3)
-    def make_forecast(
-        self,
-        forecasting_question,
-        context,
-        verbose_reasoning=False,
-        **kwargs,
-    ):
-        reply = self.query_model(forecasting_question, context, **kwargs)
-        if verbose_reasoning:
-            print("Given answer was:\n", reply)
-        return (extract_probability(reply), reply)
-
-    @retry_on_model_failure(max_retries=3)
     def make_forecast_with_probs(
         self, forecasting_question, context, verbose_reasoning=False, **kwargs
     ):
@@ -167,19 +156,6 @@ class AnthropicModel(LanguageModel):
         super().__init__(model_version)
         self.client = anthropic.Anthropic(api_key=api_key)
 
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast(
-        self,
-        forecasting_question,
-        context,
-        verbose_reasoning=False,
-        **kwargs,
-    ):
-        reply = self.query_model(forecasting_question, context, **kwargs)
-        if verbose_reasoning:
-            print("Given answer was:\n", reply)
-        return (extract_probability(reply), reply)
-
     def query_model(
         self, user_prompt, system_prompt, return_details=False, **kwargs
     ) -> Union[str, Any]:
@@ -214,19 +190,6 @@ class GeminiModel(LanguageModel):
     def __init__(self, api_key, model_version="gemini-1.5-flash-8b"):
         super().__init__(model_version)
         genai.configure(api_key=api_key)
-
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast(
-        self,
-        forecasting_question,
-        context,
-        verbose_reasoning=False,
-        **kwargs,
-    ):
-        reply = self.query_model(forecasting_question, context, **kwargs)
-        if verbose_reasoning:
-            print("Given answer was:\n", reply)
-        return (extract_probability(reply), reply)
 
     def query_model(
         self, user_prompt, system_prompt, return_details=False, **kwargs
@@ -267,19 +230,6 @@ class XAIModel(LanguageModel):
             base_url="https://api.x.ai/v1",
         )
 
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast(
-        self,
-        forecasting_question,
-        context,
-        verbose_reasoning=False,
-        **kwargs,
-    ):
-        reply = self.query_model(forecasting_question, context, **kwargs)
-        if verbose_reasoning:
-            print("Given answer was:\n", reply)
-        return (extract_probability(reply), reply)
-
     def query_model(
         self, user_prompt, system_prompt, return_details=False, **kwargs
     ) -> Union[str, Any]:
@@ -318,19 +268,6 @@ class LLAMAModel(LanguageModel):
         self.client = openai.OpenAI(
             api_key=api_key, base_url="https://api.llama-api.com"
         )
-
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast(
-        self,
-        forecasting_question,
-        context,
-        verbose_reasoning=False,
-        **kwargs,
-    ):
-        reply = self.query_model(forecasting_question, context, **kwargs)
-        if verbose_reasoning:
-            print("Given answer was:\n", reply)
-        return (extract_probability(reply), reply)
 
     def query_model(
         self, user_prompt, system_prompt, return_details=False, **kwargs
