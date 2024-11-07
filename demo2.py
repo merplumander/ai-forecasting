@@ -1,21 +1,23 @@
 import os
 
+import gradio as gr
+import matplotlib.pyplot as plt
 import numpy as np
+import requests
+import seaborn as sns
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
 
 from src.query.language_models import (
     AnthropicModel,
     GeminiModel,
     LLAMAModel,
+    MistralModel,
     OpenAIModel,
     QwenModel,
     XAIModel,
 )
 from src.query.ModelEnsemble import ModelEnsemble
 from src.query.utils import aggregate_forecasting_explanations
-
-app = Flask(__name__, template_folder="src/demo")
 
 load_dotenv(".env")
 ENSEMBLE = ModelEnsemble(
@@ -34,27 +36,14 @@ with open("context_prompt_logprobs.txt", "r") as file:
     CONTEXT = file.read()
 
 
-# Route to render the HTML form
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-
-# Route to handle the question submission
-@app.route("/ask", methods=["POST"])
-def ask():
-    question = request.form.get("question")
-    if not question:
-        return jsonify({"error": "No question provided."}), 400
-
+def ask_question(question):
     responses = ENSEMBLE.make_forecast(
         question,
         CONTEXT,
     )
     probabilities = [response[1] for response in responses if response[1] is not None]
+    models = [response[0] for response in responses if response[0] is not None]
     lower, median, upper = np.quantile(probabilities, [0.05, 0.50, 0.95])
-    # closest_response_idx = np.argmin(np.abs(median - probabilities))
-    # explanation = responses[1][closest_response_idx]
     language_model = OpenAIModel(
         api_key=os.environ.get("OPENAI_API_KEY"), model_version="gpt-4o"
     )
@@ -65,14 +54,40 @@ def ask():
         probabilities=probabilities,
         language_model=language_model,
     )
-    return jsonify(
-        {
-            "median": round(median, 2),
-            "confidence_interval": (round(lower, 2), round(upper, 2)),
-            "explanation": aggregated_explanation,
-        }
+    fig = plot_results(probabilities, models)
+
+    return (
+        f"Median: {round(median, 2)} %",
+        f"90% Confidence Interval: {round(lower, 2)}% - {round(upper, 2)}%",
+        aggregated_explanation,
+        fig,
     )
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+with gr.Blocks() as demo:
+    gr.Markdown("# Ask a Question")
+    question = gr.Textbox(label="Type your question here")
+    submit_btn = gr.Button("Submit")
+    median_output = gr.Textbox(label="Median")
+    confidence_output = gr.Textbox(label="Confidence Interval")
+    explanation_output = gr.Textbox(label="Explanation")
+
+    def plot_results(probabilities, models):
+        fig, ax = plt.subplots()
+        sns.boxplot(x=probabilities, showfliers=False)
+        sns.swarmplot(x=probabilities, hue=models, ax=ax, size=8)
+        ax.legend(title="Models")
+        ax.set_xlabel("Probability")
+        ax.set_title("Model Forecast Probabilities")
+        ax.set_xlim(0, 100)
+        return fig
+
+    plot_output = gr.Plot(label="Results Plot")
+
+    submit_btn.click(
+        ask_question,
+        inputs=question,
+        outputs=[median_output, confidence_output, explanation_output, plot_output],
+    )
+
+demo.launch()
