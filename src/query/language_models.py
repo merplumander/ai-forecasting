@@ -47,34 +47,6 @@ class LanguageModel(ABC):
         return (extract_probability(reply), reply)
 
     @abstractmethod
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self,
-        forecasting_question: str,
-        context: str,
-        verbose_reasoning: bool = False,
-        **kwargs,
-    ) -> tuple:
-        """Make a forecast using the model and return multiple possible
-        predictions with their probabilities.
-
-        Parameters
-        ----------
-        forecasting_question : str
-            Question to be forecasted.
-        context : str
-            System prompt and context.
-        verbose_reasoning : bool, optional
-             Print model output., by default False
-
-        Returns
-        -------
-        tuple(List, List)
-            (List of tokens, List of probabilities)
-        """
-        pass
-
-    @abstractmethod
     def query_model(
         self,
         user_prompt: str,
@@ -111,24 +83,6 @@ class OpenAIModel(LanguageModel):
         self.client = openai.OpenAI(
             api_key=api_key,
         )
-
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_reasoning=False, **kwargs
-    ):
-        response = self.query_model(
-            forecasting_question, context, return_details=True, **kwargs
-        )
-        if verbose_reasoning:
-            reply = response.choices[0].message.content
-            print("Given answer was:\n", reply)
-        top_logprobs = response.choices[0].logprobs.content[-1].top_logprobs
-        top_tokens = []
-        top_probs = []
-        for top_logprob in top_logprobs:
-            top_tokens.append(top_logprob.token)
-            top_probs.append(np.exp(top_logprob.logprob))
-        return top_tokens, top_probs
 
     def query_model(
         self, user_prompt: str, system_prompt: str, return_details=False, **kwargs
@@ -179,14 +133,6 @@ class AnthropicModel(LanguageModel):
         else:
             return response.content[0].text
 
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_reasoning=False, **kwargs
-    ):
-        # TODO The API does not support logprobs, is the best solution to run the
-        #   model multiple times?
-        raise NotImplementedError("The API does not support logprobs")
-
 
 class GeminiModel(LanguageModel):
 
@@ -213,15 +159,6 @@ class GeminiModel(LanguageModel):
             return response
         else:
             return response.text
-
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_reasoning=False, **kwargs
-    ):
-        # the problem here is that even though we can access the logprobs, we
-        # can get only the top 5 tokens and their probabilities, additionaly the
-        # two digits of the number are not counted as one token TODO solve this
-        raise NotImplementedError("The API does not support logprobs")
 
 
 class XAIModel(LanguageModel):
@@ -252,16 +189,6 @@ class XAIModel(LanguageModel):
             return response
         else:
             return response.choices[0].message.content
-
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_reasoning=False, **kwargs
-    ):
-        # TODO this does not work for some reason, should I try the CURL API
-        # without using OpenAI or ist the API just broken? --> turns out, the
-        # API does not return any logprobs, even if we query the model directly
-        # using curl
-        raise NotImplementedError("The API does not support logprobs")
 
 
 class LLAMAModel(LanguageModel):
@@ -297,15 +224,6 @@ class LLAMAModel(LanguageModel):
         else:
             return response.choices[0].message.content
 
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_reasoning=False, **kwargs
-    ):
-        # for newer versions of the model (>= llama3.1-70b), the logprobs are
-        # returned, but only for the tokens that are actually generated, not for the
-        # top logprobs
-        raise NotImplementedError("The API does not support logprobs")
-
 
 class MistralModel(LanguageModel):
 
@@ -336,12 +254,6 @@ class MistralModel(LanguageModel):
         else:
             return response.choices[0].message.content
 
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_reasoning=False, **kwargs
-    ):
-        raise NotImplementedError("The API does not support logprobs")
-
 
 class QwenModel(LanguageModel):
 
@@ -371,9 +283,3 @@ class QwenModel(LanguageModel):
             return response
         else:
             return response.output.text
-
-    @retry_on_model_failure(max_retries=3)
-    def make_forecast_with_probs(
-        self, forecasting_question, context, verbose_reasoning=False, **kwargs
-    ):
-        raise NotImplementedError("The API does not support logprobs")
