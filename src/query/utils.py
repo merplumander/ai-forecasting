@@ -24,7 +24,7 @@ def retry_on_model_failure(max_retries=3):
             while attempts < max_retries:
                 try:
                     return func(*args, **kwargs)
-                except ValueError as e:
+                except Exception as e:
                     attempts += 1
                     print(
                         f"Attempt {attempts} of model"

@@ -91,7 +91,7 @@ class OpenAIModel(LanguageModel):
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("top_logprobs", 20)
-        kwargs.setdefault("max_tokens", 512)
+        kwargs.setdefault("max_tokens", 600)
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
@@ -119,7 +119,7 @@ class AnthropicModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "system", "messages"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 512)
+        kwargs.setdefault("max_tokens", 600)
         response = self.client.messages.create(
             model=self.model_version,
             system=system_prompt,
@@ -146,7 +146,7 @@ class GeminiModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["response_logprobs"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_output_tokens", 512)
+        kwargs.setdefault("max_output_tokens", 600)
         # kwargs.setdefault("logprobs", 5)
         config = genai.GenerationConfig(response_logprobs=False, **kwargs)
         model = genai.GenerativeModel(
@@ -176,7 +176,7 @@ class XAIModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 512)
+        kwargs.setdefault("max_tokens", 600)
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
@@ -206,7 +206,7 @@ class LLAMAModel(LanguageModel):
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("top_logprobs", 20)
-        kwargs.setdefault("max_tokens", 512)
+        kwargs.setdefault("max_tokens", 600)
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
@@ -237,7 +237,7 @@ class MistralModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 512)
+        kwargs.setdefault("max_tokens", 600)
         response = self.client.chat.complete(
             model=self.model_version,
             messages=[
@@ -268,7 +268,7 @@ class QwenModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 512)
+        kwargs.setdefault("max_tokens", 600)
         kwargs.setdefault("seed", random.randint(1, 10000))
         response = dashscope.Generation.call(
             model=self.model_version,
@@ -282,4 +282,6 @@ class QwenModel(LanguageModel):
         if return_details:
             return response
         else:
+            if response.output is None:
+                print(response)
             return response.output.text
