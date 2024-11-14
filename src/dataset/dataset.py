@@ -2,6 +2,7 @@ import datetime
 import os
 from abc import ABC
 from dataclasses import dataclass
+from typing import Optional
 
 import pandas as pd
 
@@ -20,7 +21,7 @@ class Question(ABC):
 @dataclass
 class BinaryQuestion(Question):
     possibilities = [False, True]
-    resolution: bool
+    resolution: Optional[bool] = None
 
 
 class MetaculusDataset:
@@ -56,6 +57,12 @@ class MetaculusDataset:
             self.questions["created_at"].str.extract(r"(\d{4}-\d{2}-\d{2})")[0],
             format=time_format,
         )
+        self.questions["actual_resolve_time"] = pd.to_datetime(
+            self.questions["actual_resolve_time"].str.extract(r"(\d{4}-\d{2}-\d{2})")[
+                0
+            ],
+            format=time_format,
+        )
 
     def save(self):
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -73,6 +80,14 @@ class MetaculusDataset:
             f" {question_count}"
         )
 
+    def select_questions_resolved_before(self, date: datetime.datetime):
+        question_count = len(self.questions)
+        self.questions = self.questions[self.questions["actual_resolve_time"] < date]
+        print(
+            f"Questions resolved before {date}: {len(self.questions)} out of"
+            f" {question_count}"
+        )
+
     def select_questions_with_status(self, status: str) -> pd.DataFrame:
         assert status in [
             "upcoming",
@@ -85,7 +100,7 @@ class MetaculusDataset:
         if status == "resolved":
             self.questions = self.questions[
                 (self.questions["resolution"] != "ambiguous")
-                and (self.questions["resolution"] != "annulled")
+                & (self.questions["resolution"] != "annulled")
             ]
         print(
             f"Questions with status {status}: {len(self.questions)} out of"

@@ -46,12 +46,13 @@ def get_all_metaculus_questions() -> pd.DataFrame:
     offset = 0
     limit = 1000
     while True:
-        print("Downloading posts:", offset, "to", offset + limit)
+        print("Downloading posts:", offset, "to", limit)
         batch = get_posts_with_offset_and_limit(offset=offset, limit=limit)
         if not batch:  # Stop if no more results are returned
             break
         questions.extend(batch)
-        offset += limit  # Move to the next set of questions
+        offset = limit  # Move to the next set of questions
+        limit += 1000  # Increase the limit to get more questions
     posts_with_groups_of_questions = pd.DataFrame(questions).dropna(
         subset=["group_of_questions"]
     )
