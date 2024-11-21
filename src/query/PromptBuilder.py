@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from newspaper import Article
+
 from src.dataset.dataset import BinaryQuestion, Question
 
 ROOT = Path(__file__).parent.parent.parent
@@ -55,5 +57,26 @@ class NewsRetrievalPromptBuilder(PromptBuilder):
             question_title=question.title,
             question_description=question.description,
             num_queries=num_queries,
+        )
+        return user_prompt
+
+
+class ArticleRelevancyPromptBuilder(PromptBuilder):
+
+    def get_system_prompt():
+        with open(
+            ROOT / "prompts" / "article_relevancy_system_prompt.txt", "r"
+        ) as file:
+            system_prompt = file.read()
+        return system_prompt
+
+    def get_user_prompt(question: Question, article: Article, article_cutoff=1000):
+        with open(ROOT / "prompts" / "article_relevancy_user_prompt.txt", "r") as file:
+            user_prompt = file.read()
+        user_prompt = user_prompt.format(
+            question_title=question.title,
+            question_description=question.description,
+            article=article.text[:article_cutoff],
+            article_cutoff=article_cutoff,
         )
         return user_prompt
