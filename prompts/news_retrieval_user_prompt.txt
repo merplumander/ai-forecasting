@@ -1,0 +1,12 @@
+Question: {question_title} 
+Background: {question_description}
+
+Generate exactly {num_queries} queries.
+Begin by outlining sub-questions. These sub-questions will guide the creation of
+your search queries. Your response should follow this format (without the brackets): 
+
+Thoughts: {{Insert your reasoning here.}}
+Queries:
+1. query1;
+2. query2;
+3. query3;
