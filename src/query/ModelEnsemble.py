@@ -14,6 +14,7 @@ class ModelEnsemble:
         self,
         question: Question,
         prompt_builder: Type[PromptBuilder],
+        # Why dont we just use prompt_builder: PromptBuilder? Could you explain?
         model_query_repeats=3,
     ) -> List[Tuple[str, str, int, str]]:
         """Make a forecast using the ensemble of models.

@@ -79,6 +79,9 @@ class LanguageModel(ABC):
 class OpenAIModel(LanguageModel):
 
     def __init__(self, api_key, model_version="gpt-4o-mini"):
+        # can we have a bit of documentation here that says which model_versions
+        # there are (only the most important ones for us) and maybe a quick pro
+        # / con if that's not self evident from the model strings
         super().__init__(model_version)
         self.client = openai.OpenAI(
             api_key=api_key,
@@ -90,7 +93,11 @@ class OpenAIModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("top_logprobs", 20)
+        # can OpenAI models not return logprobs? Maybe I misunderstand the use
+        # of this assert statement
+        kwargs.setdefault(
+            "top_logprobs", 20
+        )  # do we have a reason to use this setting?
         kwargs.setdefault("max_tokens", 600)
         response = self.client.chat.completions.create(
             model=self.model_version,
@@ -283,5 +290,5 @@ class QwenModel(LanguageModel):
             return response
         else:
             if response.output is None:
-                print(response)
+                print(response)  # seems like a print statement used for debugging?
             return response.output.text
