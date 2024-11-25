@@ -65,7 +65,7 @@ class LanguageModel(ABC):
         return_details : bool, optional
             If True return all details the model's API return (attention: in
             this case the returned values have not the same format for all
-            inherited classes). If True, only the response text is returned
+            inherited classes). If False, only the response text is returned
             (i.e. same format for all inherited classed). , by default False
 
         Returns
