@@ -1,6 +1,6 @@
 import random
 from abc import ABC, abstractmethod
-from typing import Any, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import anthropic
 import dashscope
@@ -72,6 +72,79 @@ class LanguageModel(ABC):
         -------
         Union[str, Any]
             Model response text (if return_details==False) or detailed response object.
+        """
+        pass
+
+
+class LanguageModelWithBatchAPI(LanguageModel):
+
+    @abstractmethod
+    def query_batch(self, user_prompts: List[str], system_prompts: List[str]) -> str:
+        """Query the model with a batch of user and system prompts.
+
+        Parameters
+        ----------
+        user_prompts : List[str]
+            List of user prompts (specific tasks).
+        system_prompts : List[str]
+            List of system prompts (general context and role description).
+
+        Returns
+        -------
+        str
+            batch id, which can be used to retrieve batch
+        """
+        pass
+
+    @abstractmethod
+    def check_batch_status(self, batch_id: str) -> str:
+        """Check the status of a batch.
+
+        Parameters
+        ----------
+        batch_id : str
+
+        Returns
+        -------
+        str
+            Status of the batch.
+        """
+        pass
+
+    @abstractmethod
+    def cancel_batch(self, batch_id: str) -> bool:
+        """Cancel a batch.
+
+        Parameters
+        ----------
+        batch_id : str
+
+        Returns
+        -------
+        bool
+            Returns True if the batch was successfully cancelled.
+        """
+        pass
+
+    @abstractmethod
+    def retrieve_batch(
+        self, batch_id: str, return_details: bool = False
+    ) -> List[Union[str, Any]]:
+        """Retrieves the results of a batch if possible.
+
+        Parameters
+        ----------
+        batch_id : str
+        return_details : bool, optional
+            If True return all details the model's API return (attention: in
+            this case the returned values have not the same format for all
+            inherited classes). If False, only the response text is returned
+            (i.e. same format for all inherited classed). , by default False
+
+        Returns
+        -------
+        List[Union[str, Any]]
+            Model response texts (if return_details==False) or detailed response object.
         """
         pass
 
