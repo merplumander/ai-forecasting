@@ -1,7 +1,10 @@
 import re
 from functools import wraps
+from pathlib import Path
 
 import numpy as np
+
+ROOT = Path(__file__).parent.parent.parent
 
 
 def extract_probability(reply):
@@ -47,7 +50,7 @@ def aggregate_forecasting_explanations(
     reasonings = f"{newline.join(
         f"Reasoning {number}:\n{reasoning}\n"
         for number, reasoning in enumerate(reasonings))}"
-    with open("combine_reasoning_prompt.txt", "r") as file:
+    with open(ROOT / "prompts" / "combine_reasoning_prompt.txt", "r") as file:
         # Read the entire content of the file
         combine_prompt = file.read()
 

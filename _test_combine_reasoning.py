@@ -8,7 +8,7 @@ newline = "\n"
 reasonings = f"{newline.join(
     f"Reasoning {number}:\n{reasoning}\n"
     for number, reasoning in enumerate(reasonings))}"
-with open("combine_reasoning_prompt.txt", "r") as file:
+with open("prompts/combine_reasoning_prompt.txt", "r") as file:
     # Read the entire content of the file
     combine_prompt = file.read()
 
