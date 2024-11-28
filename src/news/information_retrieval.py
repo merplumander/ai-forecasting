@@ -9,6 +9,7 @@ from src.dataset.dataset import Question
 from src.query.language_models import GeminiModel, LanguageModel
 from src.query.PromptBuilder import (
     ArticleRelevancyPromptBuilder,
+    ArticlesSummaryPromptBuilder,
     NewsRetrievalPromptBuilder,
 )
 from src.query.utils import retry_on_model_failure
@@ -165,3 +166,44 @@ def get_relevant_articles(
         raise ValueError("No relevant articles found. Try lowering the min_score.")
     scored_articles.sort(key=lambda x: x[1], reverse=True)
     return [article for article, _ in scored_articles[:n]]
+
+
+def summarize_articles_for_question(
+    articles: List[Article], question: Question, language_model: LanguageModel = None
+) -> str:
+    """Summarizes a list of articles based on a question.
+
+    Parameters
+    ----------
+    articles : List[Article]
+        List of articles to summarize
+    question : Question
+    language_model : LanguageModel, optional
+        If no language model is provided, one is picked by the function, by
+        default None
+
+    Returns
+    -------
+    str
+        Summary of the articles
+    """
+    if language_model is None:
+        language_model = GeminiModel(
+            os.environ.get("GEMINI_API_KEY"), "gemini-1.5-pro-001"
+        )
+
+    system_prompt = ArticlesSummaryPromptBuilder.get_system_prompt()
+    user_prompt = ArticlesSummaryPromptBuilder.get_user_prompt(question, articles)
+
+    @retry_on_model_failure(max_retries=3)
+    def get_summary(language_model, user_prompt, system_prompt):
+        response = language_model.query_model(
+            user_prompt, system_prompt, max_output_tokens=10000
+        )
+        summary = re.search(r"Summary:\s*(.*)", response, re.DOTALL)
+        if summary:
+            return summary.group(1).strip()
+        else:
+            raise ValueError("The model did not return a valid summary.")
+
+    return get_summary(language_model, user_prompt, system_prompt)

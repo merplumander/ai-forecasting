@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import List
 
 from newspaper import Article
 
@@ -78,5 +79,24 @@ class ArticleRelevancyPromptBuilder(PromptBuilder):
             question_description=question.description,
             article=article.text[:article_cutoff],
             article_cutoff=article_cutoff,
+        )
+        return user_prompt
+
+
+class ArticlesSummaryPromptBuilder(PromptBuilder):
+
+    def get_system_prompt():
+        with open(ROOT / "prompts" / "articles_summary_system_prompt.txt", "r") as file:
+            system_prompt = file.read()
+        return system_prompt
+
+    def get_user_prompt(question: Question, articles: List[Article]):
+        with open(ROOT / "prompts" / "articles_summary_user_prompt.txt", "r") as file:
+            user_prompt = file.read()
+        articles_text = "\n\n".join([article.text for article in articles])
+        user_prompt = user_prompt.format(
+            question_title=question.title,
+            question_description=question.description,
+            articles=articles_text,
         )
         return user_prompt

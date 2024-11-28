@@ -1,0 +1,14 @@
+Summarize the following news articles into a single text which so not longer
+than 200 words. The resulting text should only contain information which is
+relevant for answering the question. Start by thinking what kind of information
+are valuable and write down possible subquestions. After that append the summary
+which should be not longer than 200 words.
+
+Answer in the following style:
+Thoughts: {{insert your thoughts}}
+Summary: {{insert you summary}}
+
+Here is the question and the articles:
+Question: {question_title}
+Articles:
+{articles}
