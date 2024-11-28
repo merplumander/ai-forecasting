@@ -51,7 +51,7 @@ def generate_search_queries(
 
     @retry_on_model_failure(max_retries=3)
     def get_queries(user_prompt, system_prompt):
-        query_pattern = r"\d+\.\s+(.*?)(?:[;.]|\n|$)"
+        query_pattern = r"\d+\.\s+(.*?)(?:[;.]|\n|$)"  # TODO short explanation
         response = language_model.query_model(user_prompt, system_prompt)
         queries = re.findall(query_pattern, response)
         if len(queries) != num_queries:

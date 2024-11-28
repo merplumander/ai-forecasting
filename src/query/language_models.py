@@ -102,11 +102,7 @@ class OpenAIModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
-        # can OpenAI models not return logprobs? Maybe I misunderstand the use
-        # of this assert statement
-        kwargs.setdefault(
-            "top_logprobs", 20
-        )  # do we have a reason to use this setting?
+        kwargs.setdefault("top_logprobs", 20)
         kwargs.setdefault("max_tokens", 600)
         response = self.client.chat.completions.create(
             model=self.model_version,
@@ -354,5 +350,5 @@ class QwenModel(LanguageModel):
             return response
         else:
             if response.output is None:
-                print(response)  # seems like a print statement used for debugging?
+                raise Exception(f"response.output is None. response is: {response}")
             return response.output.text
