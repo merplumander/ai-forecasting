@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import gradio as gr
 import matplotlib.pyplot as plt
@@ -19,6 +20,7 @@ from src.query.language_models import (
 from src.query.ModelEnsemble import ModelEnsemble
 from src.query.utils import aggregate_forecasting_explanations
 
+ROOT = Path(__file__).parent
 load_dotenv(".env")
 ENSEMBLE = ModelEnsemble(
     [
@@ -31,7 +33,9 @@ ENSEMBLE = ModelEnsemble(
         QwenModel(os.environ.get("DASHSCOPE_API_KEY")),
     ]
 )
-with open("context_prompt_logprobs.txt", "r") as file:
+with open(
+    ROOT / "promptsbinary_question_with_description_system_prompt.txt", "r"
+) as file:
     # Read the entire content of the file
     CONTEXT = file.read()
 

@@ -3,6 +3,7 @@ import re
 from typing import List
 
 from newspaper.article import Article
+from tqdm import tqdm
 
 from src.dataset.dataset import Question
 from src.query.language_models import GeminiModel, LanguageModel
@@ -50,7 +51,14 @@ def generate_search_queries(
     user_prompt = NewsRetrievalPromptBuilder.get_user_prompt(question, num_queries)
 
     @retry_on_model_failure(max_retries=3)
-    def get_queries(user_prompt, system_prompt):
+    def get_queries(language_model, user_prompt, system_prompt):
+        # This regular expression pattern is used to match a query in the
+        # following format:
+        # - A sequence of one or more digits (\d+)
+        # - Followed by a period and a space (\.\s+)
+        # - Followed by any characters (non-greedy match) until one of the
+        #   following is encountered: a semicolon, a period, a newline, or the
+        #   end of the string
         query_pattern = r"\d+\.\s+(.*?)(?:[;.]|\n|$)"
         response = language_model.query_model(user_prompt, system_prompt)
         queries = re.findall(query_pattern, response)
@@ -61,7 +69,7 @@ def generate_search_queries(
             )
         return queries
 
-    queries = get_queries(user_prompt, system_prompt)
+    queries = get_queries(language_model, user_prompt, system_prompt)
     if include_question:
         queries.append(question.title)
     return queries
@@ -146,7 +154,7 @@ def get_relevant_articles(
         List of relevant articles
     """
     scored_articles = []
-    for article in articles:
+    for article in tqdm(articles):
         score = rate_article_relevancy(
             article, question, article_cutoff, language_model
         )
