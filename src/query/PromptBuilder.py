@@ -43,6 +43,26 @@ class BinaryQuestionWithDescriptionPromptBuilder(PromptBuilder):
         return user_prompt
 
 
+class BinaryQuestionWithDescriptionAndNewsPromptBuilder(
+    BinaryQuestionWithDescriptionPromptBuilder
+):
+
+    def get_user_prompt(question: BinaryQuestion):
+        with open(
+            ROOT
+            / "prompts"
+            / "binary_question_with_description_and_news_user_prompt.txt",
+            "r",
+        ) as file:
+            user_prompt = file.read()
+        user_prompt = user_prompt.format(
+            question_title=question.title,
+            question_description=question.description,
+            news_summary=question.news_summary,
+        )
+        return user_prompt
+
+
 class NewsRetrievalPromptBuilder(PromptBuilder):
 
     def get_system_prompt(max_query_words=10):
