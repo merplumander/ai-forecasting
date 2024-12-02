@@ -90,8 +90,62 @@ anthropic_model = AnthropicModel(os.environ.get("ANTHROPIC_API_KEY"))
 gemini_model = GeminiModel(os.environ.get("GEMINI_API_KEY"))
 xai_model = XAIModel(os.environ.get("XAI_API_KEY"))
 llama_model = LLAMAModel(os.environ.get("LLAMA_API_KEY"))
-ensemble = ModelEnsemble(
-    [open_ai_model, anthropic_model, gemini_model, xai_model, llama_model]
-)
+ensemble = ModelEnsemble([anthropic_model, gemini_model, llama_model])
 # %%
 ensemble_responses = ensemble.make_forecast(forecasting_question, context_prompt)
+
+# %%
+probabilities = [
+    probability for probability in ensemble_responses[0] if probability is not None
+]
+lower, median, upper = np.quantile(probabilities, [0.05, 0.50, 0.95])
+for i in range(len(ensemble_responses[1])):
+    explanation = ensemble_responses[1][i]
+    print(explanation)
+
+# %%
+reasonings = ensemble_responses[1]
+median_forecast = median
+confidence_range_string = f"[{lower}, {upper}]"
+newline = "\n"
+reasonings = f"{newline.join(
+    f"Reasoning {number}:\n{reasoning}\n"
+    for number, reasoning in enumerate(reasonings))}"
+with open("combine_reasoning_prompt.txt", "r") as file:
+    # Read the entire content of the file
+    combine_prompt = file.read()
+
+combine_prompt = combine_prompt.format(
+    question=forecasting_question,
+    reasonings=reasonings,
+    median_forecast=median_forecast,
+    confidence_range_string=confidence_range_string,
+)
+
+print(combine_prompt)
+# %%
+response = openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": f"{combine_prompt}"},
+        # {"role": "system", "content": f"{context_prompt}"},
+    ],
+    max_tokens=1000,
+    temperature=0,
+)
+# %%
+from src.query.utils import aggregate_forecasting_explanations
+
+# %%
+language_model = OpenAIModel(
+    api_key=os.environ.get("OPENAI_API_KEY"), model_version="gpt-4o"
+)
+response = aggregate_forecasting_explanations(
+    question=forecasting_question,
+    reasonings=reasonings,
+    probabilities=probabilities,
+    language_model=language_model,
+)
+# %%
+
+# %%

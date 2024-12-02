@@ -28,7 +28,7 @@ ENSEMBLE = ModelEnsemble(
         # XAIModel(os.environ.get("XAI_API_KEY")),
         LLAMAModel(os.environ.get("LLAMA_API_KEY")),
         # MistralModel(os.environ.get("MISTRAL_API_KEY")),
-        QwenModel(os.environ.get("DASHSCOPE_API_KEY")),
+        # QwenModel(os.environ.get("DASHSCOPE_API_KEY")),
     ]
 )
 with open(
