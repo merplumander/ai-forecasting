@@ -4,5 +4,5 @@ The question you are supposed to answer is:
 The following additional information is provided:
 {question_description}
 
-The following information were retrieved to help you answer the question:
+The following information was retrieved to help you answer the question:
 {news_summary}
