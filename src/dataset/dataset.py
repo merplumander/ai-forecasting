@@ -16,6 +16,7 @@ class Question(ABC):
     created_at: datetime.datetime
     resolved: bool
     description: str = ""
+    news_summary = ""
 
 
 @dataclass

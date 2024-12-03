@@ -1,0 +1,8 @@
+The question you are supposed to answer is:
+{question_title}
+
+The following additional information is provided:
+{question_description}
+
+The following information was retrieved to help you answer the question:
+{news_summary}
