@@ -151,7 +151,7 @@ class LanguageModelWithBatchAPI(LanguageModel):
         pass
 
 
-class OpenAIModel(LanguageModel):
+class OpenAIModel(LanguageModelWithBatchAPI):
 
     def __init__(self, api_key, model_version="gpt-4o-mini"):
         """Generate an OpenAI model instance.
@@ -242,13 +242,22 @@ class OpenAIModel(LanguageModel):
         if status == "completed":
             out_file = self.client.batches.retrieve(batch_id).output_file_id
             response = self.client.files.content(out_file)
-            responses = response.split("\n")
+            file_like = io.BytesIO()
+            file_like.write(response.content)
+            file_like.seek(0)
+            results = []
+            with file_like as file:
+                for line in file:
+                    # Parsing the JSON string into a dict and appending to the list of results
+                    json_object = json.loads(line.strip())
+                    results.append(json_object)
+            results = sorted(results, key=lambda x: int(x["custom_id"].split("-")[1]))
             if return_details:
-                return responses
+                return [result["response"]["body"] for result in results]
             else:
                 return [
-                    json.loads(response)["choices"][0]["message"]["content"]
-                    for response in responses
+                    result["response"]["body"]["choices"][0]["message"]["content"]
+                    for result in results
                 ]
         else:
             raise Exception(f"Batch {batch_id} is not completed. Status is: {status}")
