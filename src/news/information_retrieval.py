@@ -63,6 +63,8 @@ def generate_search_queries(
         query_pattern = r"\d+\.\s+(.*?)(?:[;.]|\n|$)"
         response = language_model.query_model(user_prompt, system_prompt)
         queries = re.findall(query_pattern, response)
+        # Strip stars which are sometimes added to the queries
+        queries = [query.strip("*") for query in queries]
         if len(queries) != num_queries:
             raise ValueError(
                 f"The model did only return {len(queries)} and not"
