@@ -217,9 +217,9 @@ class OpenAIModel(LanguageModel):
             }
             batch_requests.append(request)
 
-        file_like = io.StringIO()
+        file_like = io.BytesIO()
         for request in batch_requests:
-            file_like.write(json.dumps(request) + "\n")
+            file_like.write((json.dumps(request) + "\n").encode("utf-8"))
         file_like.seek(0)
         batch_input_file = self.client.files.create(file=file_like, purpose="batch")
         response = self.client.batches.create(
@@ -228,6 +228,30 @@ class OpenAIModel(LanguageModel):
             completion_window="24h",
         )
         return response.id
+
+    def check_batch_status(self, batch_id):
+        response = self.client.batches.retrieve(batch_id)
+        return response.status
+
+    def cancel_batch(self, batch_id):
+        response = self.client.batches.cancel(batch_id)
+        return response.status == "cancelled" or response.status == "cancelling"
+
+    def retrieve_batch(self, batch_id, return_details=False):
+        status = self.check_batch_status(batch_id)
+        if status == "completed":
+            out_file = self.client.batches.retrieve(batch_id).output_file_id
+            response = self.client.files.content(out_file)
+            responses = response.split("\n")
+            if return_details:
+                return responses
+            else:
+                return [
+                    json.loads(response)["choices"][0]["message"]["content"]
+                    for response in responses
+                ]
+        else:
+            raise Exception(f"Batch {batch_id} is not completed. Status is: {status}")
 
 
 class AnthropicModel(LanguageModel):
