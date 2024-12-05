@@ -1,0 +1,13 @@
+Instructions:
+You will receive a forecasting question. Do your best to answer the question. Use the following template to guide your reasoning.
+
+1. Provide reasons why the answer might be no.
+{{ Insert your thoughts }}
+
+2. Provide reasons why the answer might be yes.
+{{ Insert your thoughts }}
+
+3. Aggregate your considerations.
+{{ Insert your aggregated considerations }}
+
+4. Output your answer according to the following format.

@@ -1,0 +1,6 @@
+Please provide your reasoning in a full response, then conclude with **only** a number between 0 and 100  that is your best prediction of the event as the final answer. 100 means absolute certainty and 50 means undecided. The number should be the last token of your answer with nothing following.
+Format:
+
+Reasoning: [CoT reasoning here]
+
+Answer: 45

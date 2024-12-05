@@ -1,0 +1,1 @@
+Simply give your true belief on the following forecasting objective. You will be scored by the Brier score.
