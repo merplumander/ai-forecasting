@@ -1,3 +1,5 @@
+import io
+import json
 import random
 from abc import ABC, abstractmethod
 from typing import Any, List, Tuple, Union
@@ -190,6 +192,42 @@ class OpenAIModel(LanguageModel):
             return response
         else:
             return response.choices[0].message.content
+
+    def query_batch(self, user_prompts, system_prompts, **kwargs):
+        assert not any(
+            key in kwargs for key in ["model", "messages"]
+        ), "Invalid keyword argument"
+        batch_requests = []
+        kwargs.setdefault("max_tokens", 600)
+        for i, (user_prompt, system_prompt) in enumerate(
+            zip(user_prompts, system_prompts)
+        ):
+            request = {
+                "custom_id": f"request-{i}",
+                "method": "POST",
+                "url": "/v1/chat/completions",
+                "body": {
+                    "model": self.model_version,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    **kwargs,
+                },
+            }
+            batch_requests.append(request)
+
+        file_like = io.StringIO()
+        for request in batch_requests:
+            file_like.write(json.dumps(request) + "\n")
+        file_like.seek(0)
+        batch_input_file = self.client.files.create(file=file_like, purpose="batch")
+        response = self.client.batches.create(
+            input_file_id=batch_input_file.id,
+            endpoint="/v1/chat/completions",
+            completion_window="24h",
+        )
+        return response.id
 
 
 class AnthropicModel(LanguageModel):
