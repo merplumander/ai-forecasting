@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from pathlib import Path
 from typing import List
 
@@ -39,6 +40,7 @@ class BinaryQuestionWithDescriptionPromptBuilder(PromptBuilder):
         user_prompt = user_prompt.format(
             question_title=question.title,
             question_description=question.description,
+            today_date=datetime.today().strftime("%b %d, %Y"),
         )
         return user_prompt
 
@@ -59,6 +61,7 @@ class BinaryQuestionWithDescriptionAndNewsPromptBuilder(
             question_title=question.title,
             question_description=question.description,
             news_summary=question.news_summary,
+            today_date=datetime.today().strftime("%b %d, %Y"),
         )
         return user_prompt
 
@@ -99,6 +102,8 @@ class ArticleRelevancyPromptBuilder(PromptBuilder):
             question_description=question.description,
             article=article.text[:article_cutoff],
             article_cutoff=article_cutoff,
+            today_date=datetime.today().strftime("%b %d, %Y"),
+            article_publication_date=article.publish_date.strftime("%b %d, %Y"),
         )
         return user_prompt
 
@@ -113,7 +118,13 @@ class ArticlesSummaryPromptBuilder(PromptBuilder):
     def get_user_prompt(question: Question, articles: List[Article]):
         with open(ROOT / "prompts" / "articles_summary_user_prompt.txt", "r") as file:
             user_prompt = file.read()
-        articles_text = "\n\n".join([article.text for article in articles])
+        articles_text = "\n\n".join(
+            [
+                f"Articel {i+1} (published on"
+                f" {article.publish_date.strftime('%b %d, %Y')}):\n{article.text.replace('\n\n', '\n')}"
+                for i, article in enumerate(articles)
+            ]
+        )
         user_prompt = user_prompt.format(
             question_title=question.title,
             question_description=question.description,
