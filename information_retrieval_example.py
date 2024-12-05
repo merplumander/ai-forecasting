@@ -46,6 +46,9 @@ ensemble_models = [
 ensemble = ModelEnsemble(ensemble_models)
 
 # %%
+# bqdsp: Binary Question with Description System Prompt
+# we have a number of different system prompts to increase diversity amonng the
+# predictions and to be able to do an evolutionary prompt improvement
 system_prompt_ids = ["bqdsp_0", "bqdsp_1", "bqdsp_2", "bqdsp_3"]
 ensemble_responses = ensemble.make_forecast_from_question(
     question,
