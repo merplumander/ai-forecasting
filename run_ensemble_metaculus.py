@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from forecasting.utils import load_raw_forecasting_data
+from src.analysis.utils import load_raw_forecasting_data
 from src.dataset.dataset import MetaculusDataset
 from src.query.language_models import (
     AnthropicModel,
