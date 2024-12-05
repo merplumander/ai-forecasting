@@ -10,7 +10,8 @@ from src.news.information_retrieval import (
     summarize_articles_for_question,
 )
 from src.news.news_api import get_gnews_articles, retrieve_gnews_articles_fulldata
-from src.query.language_models import OpenAIModel
+from src.query.language_models import AnthropicModel, GeminiModel, OpenAIModel
+from src.query.ModelEnsemble import ModelEnsemble
 from src.query.PromptBuilder import BinaryQuestionWithDescriptionAndNewsPromptBuilder
 
 load_dotenv(".env")
@@ -21,10 +22,10 @@ dataset = MetaculusDataset(
     download_new_data=False,
 )
 question_ids = dataset.questions.index.tolist()
-question = dataset.questions.loc[question_ids[19]]
+question = dataset.get_question(question_ids[19])
 print(question.title)
 # %%
-queries = generate_search_queries(question)
+queries = generate_search_queries(question, num_queries=10)
 print(queries)
 # %%
 articles = get_gnews_articles(queries)
@@ -37,10 +38,29 @@ summary = summarize_articles_for_question(relevant_articles, question)
 # %%
 question.news_summary = summary
 # %%
-model = OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o")
-resp = model.query_model(
-    BinaryQuestionWithDescriptionAndNewsPromptBuilder.get_user_prompt(question),
-    BinaryQuestionWithDescriptionAndNewsPromptBuilder.get_system_prompt(),
+ensemble_models = [
+    OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o"),
+    AnthropicModel(os.environ.get("ANTHROPIC_API_KEY"), "claude-3-5-sonnet-20241022"),
+    GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-pro-001"),
+]
+ensemble = ModelEnsemble(ensemble_models)
+
+# %%
+system_prompt_ids = ["bqdsp_0", "bqdsp_1", "bqdsp_2", "bqdsp_3"]
+ensemble_responses = ensemble.make_forecast_from_question(
+    question,
+    BinaryQuestionWithDescriptionAndNewsPromptBuilder,
+    system_prompt_ids=system_prompt_ids,
 )
 
+import matplotlib.pyplot as plt
+
+# %%
+import pandas as pd
+
+data = pd.DataFrame(
+    ensemble_responses,
+    columns=["question_id", "model_name", "prompt_id", "forecast", "explanation"],
+)
+plt.scatter(data.model_name, data.forecast, alpha=0.2)
 # %%
