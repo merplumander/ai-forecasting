@@ -1,6 +1,8 @@
 Question: {question_title}
+Today's date is: {today_date}
 Background: {question_description}
 Article: {article}  
+Publication date: {article_publication_date}
 
 Please rate the relevance of the article to the question, at the scale of 1-6
 1 – irrelevant
@@ -11,13 +13,12 @@ Please rate the relevance of the article to the question, at the scale of 1-6
 6 – most relevant
 
 Guidelines:
-- You don’t need to access any external sources. Just consider the information
+- You don’t need to use your own knowledge. Just consider the information
 provided.
-- Focus on the content of the article, not the title.
 - If the text content is an error message about JavaScript, paywall, cookies or
 other technical issues, output a score of 1.
 
 Your response should look like the following: 
 
-Thought: {{Insert your reasoning here.}} 
+Thoughts: {{Insert your reasoning here.}} 
 Rating: {{Insert rating here}}

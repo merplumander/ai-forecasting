@@ -1,8 +1,11 @@
 The question you are supposed to answer is:
 {question_title}
 
+Today's date is:
+{today_date}
+
 The following additional information is provided:
 {question_description}
 
-The following information was retrieved to help you answer the question:
+Your research assistant's summary of current events:
 {news_summary}
