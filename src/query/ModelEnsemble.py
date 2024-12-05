@@ -14,7 +14,8 @@ class ModelEnsemble:
         self,
         question: Question,
         prompt_builder: Type[PromptBuilder],
-        model_query_repeats=3,
+        model_query_repeats: int = 1,
+        system_prompt_ids: List[str] = None,
     ) -> List[Tuple[str, str, int, str]]:
         """Make a forecast using the ensemble of models.
 
@@ -25,17 +26,37 @@ class ModelEnsemble:
         prompt_builder : Type[PromptBuilder]
             Prompt builder to be used.
         model_query_repeats : int, optional
-            How many times the prompt should be repeated for each model, by default 3
+            How many times the prompt should be repeated for each model, by
+            default 1
+        system_prompt_ids : List[str], optional
+            List of different system prompt ids to be used, by default None
 
         Returns
         -------
-        List[Tuple[str, str, int, str]]
-            List of tuples containing the question id, model name, forecasted answer and explanation.
+        List[Tuple[str, str, str, int, str]]
+            List of tuples containing the question id, model name, prompt id,forecasted answer and explanation.
         """
-        query_list = [
-            model for model in self.models for _ in range(model_query_repeats)
-        ]
-        system_prompt = prompt_builder.get_system_prompt()
+        assert model_query_repeats > 0
+        assert (
+            model_query_repeats == 1 or system_prompt_ids is None
+        ), "User prompt ids can only be used when model_query_repeats is 1."
+        if system_prompt_ids is None:
+            query_list = [
+                model for model in self.models for _ in range(model_query_repeats)
+            ]
+            system_prompt = prompt_builder.get_system_prompt()
+            default_system_prompt_id = prompt_builder.get_default_system_prompt_id()
+            system_prompt_ids_rep = [default_system_prompt_id for _ in query_list]
+            system_prompts = [system_prompt for _ in query_list]
+        else:
+            query_list = [model for model in self.models for _ in system_prompt_ids]
+            system_prompt_ids_rep = [
+                prompt for _ in self.models for prompt in system_prompt_ids
+            ]
+            system_prompts = [
+                prompt_builder.get_system_prompt(prompt_id)
+                for prompt_id in system_prompt_ids_rep
+            ]
         user_prompt = prompt_builder.get_user_prompt(question)
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
@@ -44,7 +65,7 @@ class ModelEnsemble:
                     user_prompt,
                     system_prompt,
                 )
-                for model in query_list
+                for model, system_prompt in zip(query_list, system_prompts)
             ]
         results = []
         for i, future in enumerate(futures):
@@ -54,6 +75,7 @@ class ModelEnsemble:
                     (
                         question.question_id,
                         query_list[i].model_version,
+                        system_prompt_ids_rep[i],
                         result[0],
                         result[1],
                     )

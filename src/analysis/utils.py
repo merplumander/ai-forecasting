@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def load_raw_forecasting_data(path: Path) -> pd.DataFrame:
+def load_raw_forecasting_data(path: Path, contain_prompt_ids=False) -> pd.DataFrame:
     """Load raw forecasting data from a directory where each file contains the
     forecasts for a single question.
 
@@ -13,6 +13,8 @@ def load_raw_forecasting_data(path: Path) -> pd.DataFrame:
     ----------
     path : Path
         Path to the directory containing the forecasting data.
+    contain_prompt_ids : bool, optional
+        Whether the data contains prompt_ids, by default False
 
     Returns
     -------
@@ -22,6 +24,16 @@ def load_raw_forecasting_data(path: Path) -> pd.DataFrame:
     data = pd.DataFrame(
         {"question_id": [], "model_name": [], "forecast": [], "explanation": []}
     )
+    if contain_prompt_ids:
+        data = pd.DataFrame(
+            {
+                "question_id": [],
+                "model_name": [],
+                "prompt_ids": [],
+                "forecast": [],
+                "explanation": [],
+            }
+        )
     l = os.listdir(path)
     li = [x.split(".")[0] for x in l]
     for question_id in li:

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, override
 
 from newspaper import Article
 
@@ -22,15 +22,26 @@ class PromptBuilder(ABC):
         """Returns the user prompt for the specified question."""
         pass
 
+    def get_default_system_prompt_id() -> str:
+        """Returns the default system prompt id."""
+        return "sp_0"
+
 
 class BinaryQuestionWithDescriptionPromptBuilder(PromptBuilder):
 
-    def get_system_prompt():
-        with open(
-            ROOT / "prompts" / "binary_question_with_description_system_prompt.txt", "r"
-        ) as file:
+    def get_system_prompt(prompt_id: str = None):
+        if prompt_id is None:
+            prompt_id = (
+                BinaryQuestionWithDescriptionPromptBuilder.get_default_system_prompt_id()
+            )
+        # bqdsp: Binary Question with Description System Prompt
+        with open(ROOT / "prompts" / "bqdsp" / f"{prompt_id}.txt", "r") as file:
             system_prompt = file.read()
-        return system_prompt
+        with open(
+            ROOT / "prompts" / "bqdsp" / "response_format_prompt.txt", "r"
+        ) as file:
+            format_prompt = file.read()
+        return "\n\n".join([system_prompt, format_prompt])
 
     def get_user_prompt(question: BinaryQuestion):
         with open(
@@ -43,6 +54,11 @@ class BinaryQuestionWithDescriptionPromptBuilder(PromptBuilder):
             today_date=datetime.today().strftime("%b %d, %Y"),
         )
         return user_prompt
+
+    @override
+    def get_default_system_prompt_id() -> str:
+        """Returns the default system prompt id."""
+        return "bqdsp_0"
 
 
 class BinaryQuestionWithDescriptionAndNewsPromptBuilder(
@@ -120,7 +136,7 @@ class ArticlesSummaryPromptBuilder(PromptBuilder):
             user_prompt = file.read()
         articles_text = "\n\n".join(
             [
-                f"Articel {i+1} (published on"
+                f"Articel {i + 1} (published on"
                 f" {article.publish_date.strftime('%b %d, %Y')}):\n{article.text.replace('\n\n', '\n')}"
                 for i, article in enumerate(articles)
             ]
