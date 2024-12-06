@@ -39,7 +39,7 @@ load_dotenv(".env")
 ensemble_models = [
     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o"),
     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o-mini"),
-    OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4-turbo"),
+    # OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4-turbo"),
     AnthropicModel(os.environ.get("ANTHROPIC_API_KEY"), "claude-3-5-sonnet-20241022"),
     AnthropicModel(os.environ.get("ANTHROPIC_API_KEY"), "claude-3-5-haiku-20241022"),
     GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-pro-001"),
