@@ -6,6 +6,7 @@ from newspaper.article import Article
 from tqdm import tqdm
 
 from src.dataset.dataset import Question
+from src.news.news_api import get_gnews_articles, retrieve_gnews_articles_fulldata
 from src.query.language_models import GeminiModel, LanguageModel
 from src.query.PromptBuilder import (
     ArticleRelevancyPromptBuilder,
@@ -13,6 +14,26 @@ from src.query.PromptBuilder import (
     NewsRetrievalPromptBuilder,
 )
 from src.query.utils import retry_on_model_failure
+
+
+def search_web_and_summarize(
+    question: Question,
+    language_model: LanguageModel = None,
+    num_queries: int = 10,
+    max_query_words: int = 10,
+    include_question: bool = True,
+):
+    queries = generate_search_queries(question, num_queries=num_queries)
+
+    articles = get_gnews_articles(queries)
+
+    full_articles = retrieve_gnews_articles_fulldata(articles, num_articles=10)
+    # %%
+    relevant_articles = get_relevant_articles(full_articles, question, n=8)
+    # %%
+    summary = summarize_articles_for_question(relevant_articles, question)
+    # TODO: fix! Pass parameters, play around and see which numbers are good by default.
+    return summary
 
 
 def generate_search_queries(

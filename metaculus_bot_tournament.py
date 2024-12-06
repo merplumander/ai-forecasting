@@ -1,10 +1,22 @@
 # %%
 import os
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 
+from src.dataset.dataset import BinaryQuestion
 from src.dataset.metaculus_api import get_question_details, list_questions
+from src.query.language_models import (
+    AnthropicModel,
+    GeminiModel,
+    LLAMAModel,
+    MistralModel,
+    OpenAIModel,
+    QwenModel,
+    XAIModel,
+)
+from src.query.ModelEnsemble import ModelEnsemble
 
 # %%
 load_dotenv(".env")
@@ -34,13 +46,33 @@ for question_id in open_questions_ids[0:2]:
     question_details = get_question_details(
         question_id, metaculus_token=METACULUS_TOKEN
     )
+    assert question_details["question"]["type"] == "binary", "Question is not binary"
+    date_string = question_details["created_at"]
+    created_at = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
+    resolved = question_details["status"] == "resolved"
 
     title = question_details["question"]["title"]
     resolution_criteria = question_details["question"]["resolution_criteria"]
     background = question_details["question"]["description"]
     fine_print = question_details["question"]["fine_print"]
+    question = BinaryQuestion(
+        question_id=question_id,
+        title=title,
+        created_at=created_at,
+        resolved=resolved,
+        description=background,
+    )
 
-    # question = BinaryQuestion
+    # queries = generate_search_queries(question, num_queries=10)
+    # print(queries)
+    # # %%
+    # articles = get_gnews_articles(queries)
+    # # %%
+    # full_articles = retrieve_gnews_articles_fulldata(articles, num_articles=2)
+    # # %%
+    # relevant_articles = get_relevant_articles(full_articles, question, n=8)
+    # # %%
+    # summary = summarize_articles_for_question(relevant_articles, question)
     # print(
     #     f"------------------------\nQuestion: {title}\n\nResolution criteria:"
     #     f" {resolution_criteria}\n\nDescription: {background}\n\nFine print:"
