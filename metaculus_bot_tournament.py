@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from src.dataset.dataset import BinaryQuestion
 from src.dataset.metaculus_api import get_question_details, list_questions
+from src.news.information_retrieval import search_web_and_summarize
 from src.query.language_models import (
     AnthropicModel,
     GeminiModel,
@@ -17,6 +18,7 @@ from src.query.language_models import (
     XAIModel,
 )
 from src.query.ModelEnsemble import ModelEnsemble
+from src.query.PromptBuilder import BinaryQuestionWithDescriptionAndNewsPromptBuilder
 
 # %%
 load_dotenv(".env")
@@ -24,6 +26,8 @@ load_dotenv(".env")
 ROOT = Path(__file__).parent
 METACULUS_TOKEN = os.environ.get("METACULUS_TOKEN")
 TOURNAMENT_ID = 32506  # 32506 is the tournament ID for Q4 AI Benchmarking
+
+save_folder = ROOT / "forecasts" / "metaculus-tournament" / "Q4"
 # %%
 questions = list_questions(
     tournament_id=TOURNAMENT_ID, metaculus_token=METACULUS_TOKEN, count=100
@@ -39,9 +43,9 @@ for question in questions["results"]:
         open_questions_ids.append(question["id"])
 assert len(open_questions_ids) > 4, "Less than five open questions seems fishy."
 
-save_folder = ROOT / "forecasts" / "metaculus-tournament" / "Q4"
+
 # %%
-for question_id in open_questions_ids[0:2]:
+for question_id in [28830]:  # open_questions_ids[0:2]:
     print(question_id)
     question_details = get_question_details(
         question_id, metaculus_token=METACULUS_TOKEN
@@ -55,38 +59,46 @@ for question_id in open_questions_ids[0:2]:
     resolution_criteria = question_details["question"]["resolution_criteria"]
     background = question_details["question"]["description"]
     fine_print = question_details["question"]["fine_print"]
+    description = (
+        f"Background: \n{background}\n\n"
+        f"Fine Print: \n{fine_print}\n\n"
+        f"Resolution Criteria: \n{resolution_criteria}\n\n"
+    )
     question = BinaryQuestion(
         question_id=question_id,
         title=title,
         created_at=created_at,
         resolved=resolved,
-        description=background,
+        description=description,
     )
 
-    # queries = generate_search_queries(question, num_queries=10)
-    # print(queries)
-    # # %%
-    # articles = get_gnews_articles(queries)
-    # # %%
-    # full_articles = retrieve_gnews_articles_fulldata(articles, num_articles=2)
-    # # %%
-    # relevant_articles = get_relevant_articles(full_articles, question, n=8)
-    # # %%
-    # summary = summarize_articles_for_question(relevant_articles, question)
-    # print(
-    #     f"------------------------\nQuestion: {title}\n\nResolution criteria:"
-    #     f" {resolution_criteria}\n\nDescription: {background}\n\nFine print:"
-    #     f" {fine_print}\n\n"
-    # )
+    # news_summary = search_web_and_summarize(question, max_n_relevant_articles=10)
+
+    # question.news_summary = news_summary
+
+    print(f"------------------------\nQuestion: {title}\n\n{description}")
+
+    ensemble_models = [
+        GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-flash-001"),
+    ]
 
     # ensemble_models = [
     #     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o"),
+    #     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o-mini"),
     #     AnthropicModel(
     #         os.environ.get("ANTHROPIC_API_KEY"), "claude-3-5-sonnet-20241022"
     #     ),
     #     GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-pro-001"),
+    #     GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-flash-001"),
+    #     LLAMAModel(os.environ.get("LLAMA_API_KEY"), "llama3.1-405b"),
+    #     LLAMAModel(os.environ.get("LLAMA_API_KEY"), "llama3.2-90b-vision"),
+    #     MistralModel(os.environ.get("MISTRAL_API_KEY"), "mistral-large-2407"),
+    #     MistralModel(os.environ.get("MISTRAL_API_KEY"), "mistral-small-2402"),
+    #     XAIModel(os.environ.get("XAI_API_KEY"), "grok-beta"),
+    #     QwenModel(os.environ.get("DASHSCOPE_API_KEY"), "qwen-max"),
+    #     QwenModel(os.environ.get("DASHSCOPE_API_KEY"), "qwen-plus"),
     # ]
-    # ensemble = ModelEnsemble(ensemble_models)
+    ensemble = ModelEnsemble(ensemble_models)
 
     # # bqdsp: Binary Question with Description System Prompt
     # # we have a number of different system prompts to increase diversity amonng the
@@ -105,6 +117,10 @@ for question_id in open_questions_ids[0:2]:
     #     "bqdsp_A",
     #     "bqdsp_B",
     # ]
+    system_prompt_ids = [
+        "bqdsp_4",
+    ]
+
     # forecasts = ensemble.make_forecast_from_question(
     #     question,
     #     BinaryQuestionWithDescriptionAndNewsPromptBuilder,
@@ -113,7 +129,7 @@ for question_id in open_questions_ids[0:2]:
 
     # with open(f"{save_folder}/{question_id}.txt", "a") as file:
     #     file.writelines(f"{str(forecast)}\n" for forecast in forecasts)
-    #
+
     #
     #
     #
