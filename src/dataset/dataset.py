@@ -18,6 +18,9 @@ class Question(ABC):
     description: str = ""
     news_summary = ""
 
+    def __str__(self):
+        return self.title
+
 
 @dataclass
 class BinaryQuestion(Question):

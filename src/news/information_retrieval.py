@@ -19,20 +19,34 @@ from src.query.utils import retry_on_model_failure
 def search_web_and_summarize(
     question: Question,
     language_model: LanguageModel = None,
-    num_queries: int = 10,
-    max_query_words: int = 10,
-    include_question: bool = True,
+    num_search_queries: int = 5,
+    max_words_per_query: int = 10,
+    include_question_as_query: bool = True,
+    max_results_per_query=10,
+    max_n_relevant_articles=10,
 ):
-    queries = generate_search_queries(question, num_queries=num_queries)
+    queries = generate_search_queries(
+        question,
+        language_model=language_model,
+        num_queries=num_search_queries,
+        max_query_words=max_words_per_query,
+        include_question=include_question_as_query,
+    )
 
-    articles = get_gnews_articles(queries)
+    articles = get_gnews_articles(queries, max_results=max_results_per_query)
+    full_articles = retrieve_gnews_articles_fulldata(
+        articles, num_articles=max_results_per_query
+    )
+    relevant_articles = get_relevant_articles(
+        full_articles,
+        question,
+        n=max_n_relevant_articles,
+        language_model=language_model,
+    )
+    summary = summarize_articles_for_question(
+        relevant_articles, question, language_model=language_model
+    )
 
-    full_articles = retrieve_gnews_articles_fulldata(articles, num_articles=10)
-    # %%
-    relevant_articles = get_relevant_articles(full_articles, question, n=8)
-    # %%
-    summary = summarize_articles_for_question(relevant_articles, question)
-    # TODO: fix! Pass parameters, play around and see which numbers are good by default.
     return summary
 
 

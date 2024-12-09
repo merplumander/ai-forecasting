@@ -10,7 +10,12 @@ from src.news.information_retrieval import (
     summarize_articles_for_question,
 )
 from src.news.news_api import get_gnews_articles, retrieve_gnews_articles_fulldata
-from src.query.language_models import AnthropicModel, GeminiModel, OpenAIModel
+from src.query.language_models import (
+    AnthropicModel,
+    GeminiModel,
+    OpenAIModel,
+    QwenModel,
+)
 from src.query.ModelEnsemble import ModelEnsemble
 from src.query.PromptBuilder import BinaryQuestionWithDescriptionAndNewsPromptBuilder
 
