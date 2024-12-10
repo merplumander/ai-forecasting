@@ -1,8 +1,4 @@
-Summarize the following news articles into a single text which is not longer
-than 200 words. The resulting text should only contain information which is
-relevant for answering the question. Start by thinking what kind of information
-is valuable and write down possible subquestions. After that, append the summary
-which should be no longer than 200 words.
+Summarize the following news articles into a single summary of news. The summary should contain only and all the information that is highly relevant to working on the forecasting question “{question_title}” or any meaningful subquestion. Start by writing down what kind of information is highly relevant to the forecasting question. Afterwards append your summary.
 
 Answer in the following style:
 Thoughts: {{insert your thoughts}}
