@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from typing import List
@@ -163,6 +164,7 @@ def get_relevant_articles(
     question: Question,
     n: int = 5,
     min_score: float = 4.0,
+    article_save_path: str = None,
     article_cutoff: int = 1000,
     language_model: LanguageModel = None,
 ) -> List[Article]:
@@ -191,6 +193,13 @@ def get_relevant_articles(
     List[Article]
         List of relevant articles
     """
+    # check if save file exists. If yes load from file
+    if article_save_path is not None and os.path.exists(article_save_path):
+        with open(article_save_path, "r") as file:
+            scored_articles = json.load(file)
+            scored_articles.sort(key=lambda x: x[1], reverse=True)
+        return [article for article, _ in scored_articles[:n]]
+
     scored_articles = []
     for article in tqdm(articles):
         score = rate_article_relevancy(
@@ -201,7 +210,11 @@ def get_relevant_articles(
 
     if len(scored_articles) == 0:
         raise ValueError("No relevant articles found. Try lowering the min_score.")
+    if article_save_path is not None:
+        with open(article_save_path, "w") as file:
+            json.dump(scored_articles, file)
     scored_articles.sort(key=lambda x: x[1], reverse=True)
+
     return [article for article, _ in scored_articles[:n]]
 
 
@@ -232,11 +245,16 @@ def summarize_articles_for_question(
     system_prompt = ArticlesSummaryPromptBuilder.get_system_prompt()
     user_prompt = ArticlesSummaryPromptBuilder.get_user_prompt(question, articles)
 
+    print(f"System Prompt: {system_prompt}")
+    print(f"User Prompt: {user_prompt}")
+
     @retry_on_model_failure(max_retries=3)
     def get_summary(language_model, user_prompt, system_prompt):
         response = language_model.query_model(
             user_prompt, system_prompt, max_output_tokens=10000
         )
+
+        print("\n\n------------------LLM RESPONSE------------\n\n", response)
         summary = re.search(r"Summary:\s*(.*)", response, re.DOTALL)
         if summary:
             return summary.group(1).strip()
