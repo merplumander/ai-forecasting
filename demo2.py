@@ -19,8 +19,9 @@ from src.query.language_models import (
 )
 from src.query.ModelEnsemble import ModelEnsemble
 from src.query.utils import aggregate_forecasting_explanations
+from src.utils import get_project_root
 
-ROOT = Path(__file__).parent
+ROOT = get_project_root()
 load_dotenv(".env")
 ENSEMBLE = ModelEnsemble(
     [

@@ -25,8 +25,8 @@ from src.utils import get_project_root
 load_dotenv(".env")
 # %%
 # assumes questions are from Q4 of tournament
-root = get_project_root()
-article_folder = root / "forecasts" / "metaculus-tournament" / "Q4"
+ROOT = get_project_root()
+article_folder = ROOT / "forecasts" / "metaculus-tournament" / "Q4"
 
 
 dataset = MetaculusDataset(

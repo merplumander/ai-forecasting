@@ -4,7 +4,9 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).parent.parent.parent
+from src.utils import get_project_root
+
+ROOT = get_project_root()
 
 
 def extract_probability(reply):

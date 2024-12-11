@@ -6,8 +6,9 @@ from typing import List, override
 from newspaper import Article
 
 from src.dataset.dataset import BinaryQuestion, Question
+from src.utils import get_project_root
 
-ROOT = Path(__file__).parent.parent.parent
+ROOT = get_project_root()
 
 
 class PromptBuilder(ABC):
@@ -141,6 +142,7 @@ class ArticlesSummaryPromptBuilder(PromptBuilder):
                 for i, article in enumerate(articles)
             ]
         )
+        # print("\n\n\n\n\n-----------------------------\n", articles_text)
         user_prompt = user_prompt.format(
             question_title=question.title,
             question_description=question.description,
