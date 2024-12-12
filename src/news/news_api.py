@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from typing import List
 
@@ -114,7 +115,8 @@ def get_gnews_articles(
     start_date = tuple(start_date.timetuple())[:3] if start_date is not None else None
     end_date = tuple(end_date.timetuple())[:3] if end_date is not None else None
     retrieved_articles = []
-    for i in tqdm(range(len(queries))):
+
+    def get_articles(i):
         google_news = GNews(
             language="en",
             start_date=start_date,
@@ -134,8 +136,10 @@ def get_gnews_articles(
         # Update each article with the search term that retrieved it
         for article in articles:
             article["search_term"] = queries[i]
-        # Collect all articles into a single list
-        retrieved_articles.append(articles)
+        return articles
+
+    with ThreadPoolExecutor(max_workers=len(queries)) as executor:
+        retrieved_articles = list(executor.map(get_articles, range(len(queries))))
 
     return retrieved_articles
 
@@ -175,18 +179,26 @@ def retrieve_gnews_articles_fulldata(
                 continue
             else:  # new article, add to the set of unique urls
                 unique_urls.add(article["url"])
-            url = new_decoderv1(article["url"])["decoded_url"]
-            full_article = google_news.get_full_article(url)
-            if (
-                full_article is not None
-                and full_article.text
-                and full_article.publish_date
-                and len(full_article.text) > length_threshold
-            ):  # remove short articles
-                full_article.search_term = article["search_term"]
-                full_article.html = ""  # remove html, useless for us
-                fulltext_articles.append(full_article)
-                articles_added += 1
+
+    def get_full_article(url):
+        url = new_decoderv1(url)["decoded_url"]
+        full_article = google_news.get_full_article(url)
+        return full_article
+
+    with ThreadPoolExecutor(max_workers=50) as executor:
+        full_articles = list(executor.map(get_full_article, unique_urls))
+
+    for full_article in full_articles:
+        if (
+            full_article is not None
+            and full_article.text
+            and full_article.publish_date
+            and len(full_article.text) > length_threshold
+        ):  # remove short articles
+            full_article.search_term = article["search_term"]
+            full_article.html = ""  # remove html, useless for us
+            fulltext_articles.append(full_article)
+            articles_added += 1
     if len(fulltext_articles) < len(retrieved_articles) * num_articles:
         print(
             f"Could only retrieve {len(fulltext_articles)} out of"
