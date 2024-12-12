@@ -34,7 +34,7 @@ def retry_on_model_failure(max_retries=3):
                         f" {args[0].model_version} failed with error: {e.args[0]}",
                         extra={"error": e},
                     )
-            logger.warning(
+            logger.error(
                 f"Model {args[0].model_version} failed after {max_retries} attempts."
             )
             return None
