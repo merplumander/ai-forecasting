@@ -1,6 +1,7 @@
 .env
 .vscode/
 _test.py
+.app.log
 
 __pycache__/
 *.egg-info
