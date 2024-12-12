@@ -1,11 +1,16 @@
 # %%
+import json
 import os
 from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-from src.dataset.dataset import BinaryQuestion
+from src.dataset.dataset import (
+    BinaryQuestion,
+    QuestionJSONEncoder,
+    question_json_decoder,
+)
 from src.dataset.metaculus_api import get_question_details, list_questions
 from src.news.information_retrieval import search_web_and_summarize
 from src.query.language_models import (
@@ -54,7 +59,7 @@ for question_id in open_questions_ids:
     print(title)
 
 # %%
-for question_id in open_questions_ids[0:1]:
+for question_id in open_questions_ids:
     print(question_id)
     question_details = get_question_details(
         question_id, metaculus_token=METACULUS_TOKEN
@@ -87,6 +92,7 @@ for question_id in open_questions_ids[0:1]:
 
     print(f"------------------------\nQuestion: {title}\n\n{description}")
     break
+
 
 # %%
 ensemble_models = [
@@ -138,9 +144,16 @@ forecasts = ensemble.make_forecast_from_question(
     system_prompt_ids=system_prompt_ids,
 )
 
-with open(f"{save_folder}/{question_id}.txt", "a") as file:
+with open(f"{save_folder}/{question_id}-forecasts.txt", "a") as file:
     file.writelines(f"{str(forecast)}\n" for forecast in forecasts)
 
+with open(f"{save_folder}/{question_id}-question.txt", "w") as file:
+    json.dump(question, file, cls=QuestionJSONEncoder, indent=4)
+
+# %%
+with open(f"{save_folder}/{question_id}-question.txt", "r") as file:
+    serialize_str = file.read()
+deserialized_q = json.loads(serialize_str, object_hook=question_json_decoder)
 #
 #
 #

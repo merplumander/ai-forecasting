@@ -1,7 +1,8 @@
-import datetime
+import json
 import os
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import datetime
 from typing import Optional
 
 import pandas as pd
@@ -14,10 +15,10 @@ from src.utils import logger
 class Question(ABC):
     question_id: str
     title: str
-    created_at: datetime.datetime
+    created_at: datetime
     resolved: bool
     description: str = ""
-    news_summary = ""
+    news_summary: str = ""
 
     def __str__(self):
         return self.title
@@ -27,6 +28,29 @@ class Question(ABC):
 class BinaryQuestion(Question):
     possibilities = [False, True]
     resolution: Optional[bool] = None
+
+
+class QuestionJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return {"__type__": "datetime", "value": obj.isoformat()}
+        if isinstance(obj, Question):
+            data = asdict(obj)  #
+            data["__type__"] = obj.__class__.__name__  # Add type for reconstruction
+            return data
+        return super().default(obj)
+
+
+def question_json_decoder(d):
+    if "__type__" in d:
+        obj_type = d.pop("__type__")  # Remove the __type__ key
+        if obj_type == "datetime":
+            return datetime.fromisoformat(d["value"])
+        if obj_type == "BinaryQuestion":
+            return BinaryQuestion(**d)
+        if obj_type == "Question":
+            return Question(**d)
+    return d
 
 
 class MetaculusDataset:
@@ -70,14 +94,14 @@ class MetaculusDataset:
         )
 
     def save(self):
-        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        current_date = datetime.now().strftime("%Y-%m-%d")
         if not self.file_infix:
             filename = f"metaculus_questions_{current_date}_{self.questions['id'].max()}-{self.questions['id'].min()}.csv"
         else:
             filename = f"metaculus_questions_{self.file_infix}_{current_date}_{self.questions['id'].max()}-{self.questions['id'].min()}.csv"
         self.questions.to_csv(os.path.join(self.path, filename))
 
-    def select_questions_newer_than(self, date: datetime.datetime):
+    def select_questions_newer_than(self, date: datetime):
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["created_at"] > date]
         logger.info(
@@ -85,7 +109,7 @@ class MetaculusDataset:
             f" {question_count}"
         )
 
-    def select_questions_resolved_before(self, date: datetime.datetime):
+    def select_questions_resolved_before(self, date: datetime):
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["actual_resolve_time"] < date]
         logger.info(
