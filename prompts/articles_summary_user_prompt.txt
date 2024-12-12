@@ -1,4 +1,6 @@
-Summarize the following news articles into a single summary of news. The summary should contain only and all the information that is highly relevant to working on the forecasting question “{question_title}” or any meaningful subquestion. Start by writing down what kind of information is highly relevant to the forecasting question. Afterwards append your summary.
+Summarize the following news articles into a single summary of news. The summary should contain only information that is highly relevant to working on the forecasting question “{question_title}” or any meaningful subquestion. Start by writing down what kind of information is highly relevant to the forecasting question. Afterwards append your summary.
+
+Today's date is: {today_date}
 
 Answer in the following style:
 Thoughts: {{insert your thoughts}}

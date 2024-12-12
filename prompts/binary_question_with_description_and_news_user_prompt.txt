@@ -4,8 +4,8 @@ The question you are supposed to answer is:
 Today's date is:
 {today_date}
 
-The following additional information is provided:
+The following additional information is provided by the forecasting platform:
 {question_description}
 
-Your research assistant's summary of current events:
+Your research intern spent an hour summarizing current events from Google News. Use your own judgement on whether and how to use this information to inform your forecast:
 {news_summary}
