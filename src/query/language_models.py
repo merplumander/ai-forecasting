@@ -81,7 +81,9 @@ class LanguageModel(ABC):
 class LanguageModelWithBatchAPI(LanguageModel):
 
     @abstractmethod
-    def query_batch(self, user_prompts: List[str], system_prompts: List[str]) -> str:
+    def query_batch(
+        self, user_prompts: List[str], system_prompts: List[str]
+    ) -> (str, List[str]):
         """Query the model with a batch of user and system prompts.
 
         Parameters
@@ -93,8 +95,9 @@ class LanguageModelWithBatchAPI(LanguageModel):
 
         Returns
         -------
-        str
-            batch id, which can be used to retrieve batch
+        (str, List[str])
+            batch id, which can be used to retrieve batch and list of request ids.
+
         """
         pass
 
@@ -130,13 +133,15 @@ class LanguageModelWithBatchAPI(LanguageModel):
 
     @abstractmethod
     def retrieve_batch(
-        self, batch_id: str, return_details: bool = False
+        self, batch_id: str, request_ids: List[str], return_details: bool = False
     ) -> List[Union[str, Any]]:
         """Retrieves the results of a batch if possible.
 
         Parameters
         ----------
         batch_id : str
+        request_ids : List[str]
+            List of request ids
         return_details : bool, optional
             If True return all details the model's API return (attention: in
             this case the returned values have not the same format for all
@@ -199,11 +204,14 @@ class OpenAIModel(LanguageModelWithBatchAPI):
         ), "Invalid keyword argument"
         batch_requests = []
         kwargs.setdefault("max_tokens", 600)
+        request_ids = []
         for i, (user_prompt, system_prompt) in enumerate(
             zip(user_prompts, system_prompts)
         ):
+            request_id = f"request-{i}"
+            request_ids.append(request_id)
             request = {
-                "custom_id": f"request-{i}",
+                "custom_id": request_id,
                 "method": "POST",
                 "url": "/v1/chat/completions",
                 "body": {
@@ -227,7 +235,7 @@ class OpenAIModel(LanguageModelWithBatchAPI):
             endpoint="/v1/chat/completions",
             completion_window="24h",
         )
-        return response.id
+        return (response.id, request_ids)
 
     def check_batch_status(self, batch_id):
         response = self.client.batches.retrieve(batch_id)
@@ -237,7 +245,7 @@ class OpenAIModel(LanguageModelWithBatchAPI):
         response = self.client.batches.cancel(batch_id)
         return response.status == "cancelled" or response.status == "cancelling"
 
-    def retrieve_batch(self, batch_id, return_details=False):
+    def retrieve_batch(self, batch_id, request_ids, return_details=False):
         status = self.check_batch_status(batch_id)
         if status == "completed":
             out_file = self.client.batches.retrieve(batch_id).output_file_id
@@ -251,14 +259,18 @@ class OpenAIModel(LanguageModelWithBatchAPI):
                     # Parsing the JSON string into a dict and appending to the list of results
                     json_object = json.loads(line.strip())
                     results.append(json_object)
-            results = sorted(results, key=lambda x: int(x["custom_id"].split("-")[1]))
             if return_details:
-                return [result["response"]["body"] for result in results]
-            else:
-                return [
-                    result["response"]["body"]["choices"][0]["message"]["content"]
+                return {
+                    result["custom_id"]: result["response"]["body"]
                     for result in results
-                ]
+                }
+            else:
+                return {
+                    result["custom_id"]: result["response"]["body"]["choices"][0][
+                        "message"
+                    ]["content"]
+                    for result in results
+                }
         else:
             raise Exception(f"Batch {batch_id} is not completed. Status is: {status}")
 
