@@ -24,7 +24,7 @@ def search_web_and_summarize(
     num_search_queries: int = 5,
     max_words_per_query: int = 10,
     include_question_as_query: bool = True,
-    max_results_per_query=10,
+    max_results_per_query=20,
     max_n_relevant_articles=10,
 ):
     queries = generate_search_queries(
@@ -34,17 +34,33 @@ def search_web_and_summarize(
         max_query_words=max_words_per_query,
         include_question=include_question_as_query,
     )
-
-    articles = get_gnews_articles(queries, max_results=max_results_per_query)
-    full_articles = retrieve_gnews_articles_fulldata(
-        articles, num_articles=max_results_per_query
-    )
-    relevant_articles = get_relevant_articles(
-        full_articles,
-        question,
-        n=max_n_relevant_articles,
-        language_model=language_model,
-    )
+    relevant_articles = []
+    results_per_query = 5
+    while (
+        len(relevant_articles) < max_n_relevant_articles
+        and results_per_query <= max_results_per_query
+    ):
+        print("test")
+        articles = get_gnews_articles(queries, max_results=results_per_query)
+        relevant_urls = [a.url for a in relevant_articles]
+        articles = [
+            list(
+                filter(
+                    lambda article: article["url"] not in relevant_urls, article_list
+                )
+            )
+            for article_list in articles
+        ]
+        full_articles = retrieve_gnews_articles_fulldata(
+            articles, num_articles=results_per_query
+        )
+        relevant_articles += get_relevant_articles(
+            full_articles,
+            question,
+            n=(max_n_relevant_articles - len(relevant_articles)),
+            language_model=language_model,
+        )
+        results_per_query *= 2
     summary = summarize_articles_for_question(
         relevant_articles, question, language_model=language_model
     )
@@ -61,6 +77,7 @@ def search_web_and_summarize_parallel(
     max_results_per_query=10,
     max_n_relevant_articles=10,
 ) -> List[str]:
+    """Same as search_web_and_summarize but parallelized for multiple questions"""
     args_list = [
         (
             question,
@@ -167,7 +184,6 @@ def rate_article_relevancy(
     float
         Relevancy score
     """
-    # TODO add today date and article published date to the prompt
     system_prompt = ArticleRelevancyPromptBuilder.get_system_prompt()
     user_prompt = ArticleRelevancyPromptBuilder.get_user_prompt(
         question, article, article_cutoff
