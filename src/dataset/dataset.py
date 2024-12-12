@@ -7,6 +7,7 @@ from typing import Optional
 import pandas as pd
 
 from src.dataset.metaculus_api import get_all_metaculus_questions
+from src.utils import logger
 
 
 @dataclass
@@ -55,7 +56,7 @@ class MetaculusDataset:
                 )
             newest_file = max(files)
             self.questions = pd.read_csv(os.path.join(path, newest_file), index_col=0)
-        print("Questions loaded:", len(self.questions))
+        logger.info(f"Questions loaded: {len(self.questions)}")
         time_format = "%Y-%m-%d"
         self.questions["created_at"] = pd.to_datetime(
             self.questions["created_at"].str.extract(r"(\d{4}-\d{2}-\d{2})")[0],
@@ -79,7 +80,7 @@ class MetaculusDataset:
     def select_questions_newer_than(self, date: datetime.datetime):
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["created_at"] > date]
-        print(
+        logger.info(
             f"Questions newer than {date}: {len(self.questions)} out of"
             f" {question_count}"
         )
@@ -87,7 +88,7 @@ class MetaculusDataset:
     def select_questions_resolved_before(self, date: datetime.datetime):
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["actual_resolve_time"] < date]
-        print(
+        logger.info(
             f"Questions resolved before {date}: {len(self.questions)} out of"
             f" {question_count}"
         )
@@ -106,7 +107,7 @@ class MetaculusDataset:
                 (self.questions["resolution"] != "ambiguous")
                 & (self.questions["resolution"] != "annulled")
             ]
-        print(
+        logger.info(
             f"Questions with status {status}: {len(self.questions)} out of"
             f" {question_count}"
         )
@@ -120,7 +121,7 @@ class MetaculusDataset:
         ], f"Invalid question type: {forecast_type}"
         question_count = len(self.questions)
         self.questions = self.questions[self.questions["type"] == forecast_type]
-        print(
+        logger.info(
             f"Questions with type {forecast_type}: {len(self.questions)} out of"
             f" {question_count}"
         )

@@ -29,15 +29,14 @@ def retry_on_model_failure(max_retries=3):
                 except Exception as e:
                     attempts += 1
 
-                    print(
-                        f"Attempt {attempts} of model"
-                        f" {args[0].model_version} failed with error: {e.args[0]}"
-                    )
                     logger.warning(
                         f"Attempt {attempts} of model"
-                        f" {args[0].model_version} failed with error: {e}"
+                        f" {args[0].model_version} failed with error: {e.args[0]}",
+                        extra={"error": e},
                     )
-            print(f"Model {args[0].model_version} failed after {max_retries} attempts.")
+            logger.warning(
+                f"Model {args[0].model_version} failed after {max_retries} attempts."
+            )
             return None
 
         return wrapper

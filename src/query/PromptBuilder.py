@@ -140,7 +140,6 @@ class ArticlesSummaryPromptBuilder(PromptBuilder):
                 for i, article in enumerate(articles)
             ]
         )
-        # print("\n\n\n\n\n-----------------------------\n", articles_text)
         user_prompt = user_prompt.format(
             question_title=question.title,
             question_description=question.description,

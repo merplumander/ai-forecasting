@@ -16,6 +16,7 @@ from src.query.PromptBuilder import (
     NewsRetrievalPromptBuilder,
 )
 from src.query.utils import retry_on_model_failure
+from src.utils import logger
 
 
 def search_web_and_summarize(
@@ -40,7 +41,6 @@ def search_web_and_summarize(
         len(relevant_articles) < max_n_relevant_articles
         and results_per_query <= max_results_per_query
     ):
-        print("test")
         articles = get_gnews_articles(queries, max_results=results_per_query)
         relevant_urls = [a.url for a in relevant_articles]
         articles = [
@@ -291,8 +291,8 @@ def summarize_articles_for_question(
     system_prompt = ArticlesSummaryPromptBuilder.get_system_prompt()
     user_prompt = ArticlesSummaryPromptBuilder.get_user_prompt(question, articles)
 
-    print(f"System Prompt: {system_prompt}")
-    print(f"User Prompt: {user_prompt}")
+    logger.info(f"System Prompt: {system_prompt}")
+    logger.info(f"User Prompt: {user_prompt}")
 
     @retry_on_model_failure(max_retries=3)
     def get_summary(language_model, user_prompt, system_prompt):
@@ -300,7 +300,7 @@ def summarize_articles_for_question(
             user_prompt, system_prompt, max_output_tokens=10000
         )
 
-        print("\n\n------------------LLM RESPONSE------------\n\n", response)
+        logger.info(f"\n\n------------------LLM RESPONSE------------\n\n{response}")
         summary = re.search(r"Summary:\s*(.*)", response, re.DOTALL)
         if summary:
             return summary.group(1).strip()

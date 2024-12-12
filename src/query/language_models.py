@@ -10,6 +10,7 @@ import openai
 from mistralai import Mistral
 
 from src.query.utils import extract_probability, retry_on_model_failure
+from src.utils import logger
 
 
 class LanguageModel(ABC):
@@ -22,7 +23,6 @@ class LanguageModel(ABC):
         self,
         forecasting_question: str,
         context: str,
-        verbose_reasoning: bool = False,
         **kwargs,
     ) -> Tuple[int, str]:
         """Make a forecast using the model.
@@ -33,8 +33,6 @@ class LanguageModel(ABC):
             Question to be forecasted.
         context : str
             System prompt and context.
-        verbose_reasoning : bool, optional
-            Print model output., by default False
 
         Returns
         -------
@@ -42,8 +40,7 @@ class LanguageModel(ABC):
             Tuple with forecasted answer and reasoning.
         """
         reply = self.query_model(forecasting_question, context, **kwargs)
-        if verbose_reasoning:
-            print("Given answer was:\n", reply)
+        logger.info(f"Given answer was:\n{reply}")
         return (extract_probability(reply), reply)
 
     @abstractmethod

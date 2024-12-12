@@ -5,6 +5,8 @@ from typing import List
 import pandas as pd
 import requests
 
+from src.utils import logger
+
 API_BASE_URL = "https://www.metaculus.com/api2"
 
 
@@ -32,7 +34,7 @@ def get_posts_with_offset_and_limit(offset=0, limit=1000) -> List:
         data = response.json()
         return data["results"]
     else:
-        print("Error:", response.status_code)
+        logger.error(f"Scraping from metaculus failed with code {response.status_code}")
         return None
 
 
@@ -49,7 +51,7 @@ def get_all_metaculus_questions() -> pd.DataFrame:
     offset = 0
     limit = 1000
     while True:
-        print("Downloading posts:", offset, "to", limit)
+        logger.info(f"Downloading posts: {offset} to {limit} from metaculus.")
         batch = get_posts_with_offset_and_limit(offset=offset, limit=limit)
         if not batch:  # Stop if no more results are returned
             break
@@ -63,7 +65,6 @@ def get_all_metaculus_questions() -> pd.DataFrame:
     extracted_questions = []
     for _, post in posts_with_groups_of_questions.iterrows():
         for question in post["group_of_questions"]["questions"]:
-            print(question)
             if question["description"] == "":
                 question["description"] = post["group_of_questions"]["description"]
             if question["resolution_criteria"] == "":
@@ -74,7 +75,7 @@ def get_all_metaculus_questions() -> pd.DataFrame:
     questions_df = pd.DataFrame(questions.question.to_list() + extracted_questions)
     questions_df["question_id"] = "metaculus-" + questions_df["id"].astype(str)
     questions_df.set_index("question_id", inplace=True)
-    print("Total questions downloaded:", len(questions_df))
+    logger.info(f"Total questions downloaded: {len(questions_df)}.")
     return pd.DataFrame(questions_df)
 
 
