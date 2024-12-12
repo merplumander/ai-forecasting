@@ -16,9 +16,7 @@ from src.query.language_models import (
     XAIModel,
 )
 from src.query.ModelEnsemble import ModelEnsemble
-from src.utils import get_project_root
-
-ROOT = get_project_root()
+from src.utils import ROOT
 
 
 def validate_asterisk_number(text):

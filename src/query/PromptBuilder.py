@@ -6,9 +6,7 @@ from typing import List, override
 from newspaper import Article
 
 from src.dataset.dataset import BinaryQuestion, Question
-from src.utils import get_project_root
-
-ROOT = get_project_root()
+from src.utils import ROOT
 
 
 class PromptBuilder(ABC):
@@ -147,5 +145,6 @@ class ArticlesSummaryPromptBuilder(PromptBuilder):
             question_title=question.title,
             question_description=question.description,
             articles=articles_text,
+            today_date=datetime.today().strftime("%b %d, %Y"),
         )
         return user_prompt

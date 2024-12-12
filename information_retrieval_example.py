@@ -20,12 +20,11 @@ from src.query.language_models import (
 )
 from src.query.ModelEnsemble import ModelEnsemble
 from src.query.PromptBuilder import BinaryQuestionWithDescriptionAndNewsPromptBuilder
-from src.utils import get_project_root
+from src.utils import ROOT
 
 load_dotenv(".env")
 # %%
 # assumes questions are from Q4 of tournament
-ROOT = get_project_root()
 article_folder = ROOT / "forecasts" / "metaculus-tournament" / "Q4"
 
 

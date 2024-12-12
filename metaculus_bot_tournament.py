@@ -19,11 +19,11 @@ from src.query.language_models import (
 )
 from src.query.ModelEnsemble import ModelEnsemble
 from src.query.PromptBuilder import BinaryQuestionWithDescriptionAndNewsPromptBuilder
+from src.utils import ROOT
 
 # %%
 load_dotenv(".env")
 
-ROOT = Path(__file__).parent
 METACULUS_TOKEN = os.environ.get("METACULUS_TOKEN")
 TOURNAMENT_ID = 32506  # 32506 is the tournament ID for Q4 AI Benchmarking
 
@@ -43,9 +43,18 @@ for question in questions["results"]:
         open_questions_ids.append(question["id"])
 assert len(open_questions_ids) > 4, "Less than five open questions seems fishy."
 
+# %%
+for question_id in open_questions_ids:
+
+    question_details = get_question_details(
+        question_id, metaculus_token=METACULUS_TOKEN
+    )
+
+    title = question_details["question"]["title"]
+    print(title)
 
 # %%
-for question_id in [28830]:  # open_questions_ids[0:2]:
+for question_id in open_questions_ids[0:1]:
     print(question_id)
     question_details = get_question_details(
         question_id, metaculus_token=METACULUS_TOKEN
@@ -72,77 +81,79 @@ for question_id in [28830]:  # open_questions_ids[0:2]:
         description=description,
     )
 
-    # news_summary = search_web_and_summarize(question, max_n_relevant_articles=10)
+    news_summary = search_web_and_summarize(question, max_n_relevant_articles=10)
 
-    # question.news_summary = news_summary
+    question.news_summary = news_summary
 
     print(f"------------------------\nQuestion: {title}\n\n{description}")
+    break
 
-    ensemble_models = [
-        GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-flash-001"),
-    ]
+# %%
+ensemble_models = [
+    GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-flash-001"),
+]
 
-    # ensemble_models = [
-    #     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o"),
-    #     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o-mini"),
-    #     AnthropicModel(
-    #         os.environ.get("ANTHROPIC_API_KEY"), "claude-3-5-sonnet-20241022"
-    #     ),
-    #     GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-pro-001"),
-    #     GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-flash-001"),
-    #     LLAMAModel(os.environ.get("LLAMA_API_KEY"), "llama3.1-405b"),
-    #     LLAMAModel(os.environ.get("LLAMA_API_KEY"), "llama3.2-90b-vision"),
-    #     MistralModel(os.environ.get("MISTRAL_API_KEY"), "mistral-large-2407"),
-    #     MistralModel(os.environ.get("MISTRAL_API_KEY"), "mistral-small-2402"),
-    #     XAIModel(os.environ.get("XAI_API_KEY"), "grok-beta"),
-    #     QwenModel(os.environ.get("DASHSCOPE_API_KEY"), "qwen-max"),
-    #     QwenModel(os.environ.get("DASHSCOPE_API_KEY"), "qwen-plus"),
-    # ]
-    ensemble = ModelEnsemble(ensemble_models)
+# ensemble_models = [
+#     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o"),
+#     OpenAIModel(os.environ.get("OPENAI_API_KEY"), "gpt-4o-mini"),
+#     AnthropicModel(
+#         os.environ.get("ANTHROPIC_API_KEY"), "claude-3-5-sonnet-20241022"
+#     ),
+#     GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-pro-001"),
+#     GeminiModel(os.environ.get("GEMINI_API_KEY"), "gemini-1.5-flash-001"),
+#     LLAMAModel(os.environ.get("LLAMA_API_KEY"), "llama3.1-405b"),
+#     LLAMAModel(os.environ.get("LLAMA_API_KEY"), "llama3.2-90b-vision"),
+#     MistralModel(os.environ.get("MISTRAL_API_KEY"), "mistral-large-2407"),
+#     MistralModel(os.environ.get("MISTRAL_API_KEY"), "mistral-small-2402"),
+#     XAIModel(os.environ.get("XAI_API_KEY"), "grok-beta"),
+#     QwenModel(os.environ.get("DASHSCOPE_API_KEY"), "qwen-max"),
+#     QwenModel(os.environ.get("DASHSCOPE_API_KEY"), "qwen-plus"),
+# ]
+ensemble = ModelEnsemble(ensemble_models)
 
-    # # bqdsp: Binary Question with Description System Prompt
-    # # we have a number of different system prompts to increase diversity amonng the
-    # # predictions and to be able to do an evolutionary prompt improvement
-    # system_prompt_ids = [
-    #     "bqdsp_0",
-    #     "bqdsp_1",
-    #     "bqdsp_2",
-    #     "bqdsp_3",
-    #     "bqdsp_4",
-    #     "bqdsp_5",
-    #     "bqdsp_6",
-    #     "bqdsp_7",
-    #     "bqdsp_8",
-    #     "bqdsp_9",
-    #     "bqdsp_A",
-    #     "bqdsp_B",
-    # ]
-    system_prompt_ids = [
-        "bqdsp_4",
-    ]
+# # bqdsp: Binary Question with Description System Prompt
+# # we have a number of different system prompts to increase diversity among the
+# # predictions and to be able to do an evolutionary prompt improvement
+# system_prompt_ids = [
+#     "bqdsp_0",
+#     "bqdsp_1",
+#     "bqdsp_2",
+#     "bqdsp_3",
+#     "bqdsp_4",
+#     "bqdsp_5",
+#     "bqdsp_6",
+#     "bqdsp_7",
+#     "bqdsp_8",
+#     "bqdsp_9",
+#     "bqdsp_A",
+#     "bqdsp_B",
+# ]
+system_prompt_ids = [
+    "bqdsp_4",
+]
 
-    # forecasts = ensemble.make_forecast_from_question(
-    #     question,
-    #     BinaryQuestionWithDescriptionAndNewsPromptBuilder,
-    #     system_prompt_ids=system_prompt_ids,
-    # )
+forecasts = ensemble.make_forecast_from_question(
+    question,
+    BinaryQuestionWithDescriptionAndNewsPromptBuilder,
+    system_prompt_ids=system_prompt_ids,
+)
 
-    # with open(f"{save_folder}/{question_id}.txt", "a") as file:
-    #     file.writelines(f"{str(forecast)}\n" for forecast in forecasts)
+with open(f"{save_folder}/{question_id}.txt", "a") as file:
+    file.writelines(f"{str(forecast)}\n" for forecast in forecasts)
 
-    #
-    #
-    #
-    #
-    # probability, comment = get_gpt_prediction(question_details)
+#
+#
+#
+#
+# probability, comment = get_gpt_prediction(question_details)
 
-    # print(f"\n\n------------------LLM RESPONSE------------\n\n")
-    # print(f"--------------\nProbability: {probability}\n\nComment: {comment}\n\n")
-    # print(f"\n\n------------------END LLM RESPONSE------------\n\n")
+# print(f"\n\n------------------LLM RESPONSE------------\n\n")
+# print(f"--------------\nProbability: {probability}\n\nComment: {comment}\n\n")
+# print(f"\n\n------------------END LLM RESPONSE------------\n\n")
 
-    # if SUBMIT_PREDICTION:
-    #     assert probability is not None, "Unexpected probability format"
-    #     post_question_prediction(question_id, probability)
-    #     post_question_comment(question_id, comment)
+# if SUBMIT_PREDICTION:
+#     assert probability is not None, "Unexpected probability format"
+#     post_question_prediction(question_id, probability)
+#     post_question_comment(question_id, comment)
 
 # %%
