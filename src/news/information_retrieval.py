@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 from newspaper.article import Article
@@ -49,6 +50,35 @@ def search_web_and_summarize(
     )
 
     return summary
+
+
+def search_web_and_summarize_parallel(
+    questions: List[Question],
+    language_model: LanguageModel = None,
+    num_search_queries: int = 5,
+    max_words_per_query: int = 10,
+    include_question_as_query: bool = True,
+    max_results_per_query=10,
+    max_n_relevant_articles=10,
+) -> List[str]:
+    args_list = [
+        (
+            question,
+            language_model,
+            num_search_queries,
+            max_words_per_query,
+            include_question_as_query,
+            max_results_per_query,
+            max_n_relevant_articles,
+        )
+        for question in questions
+    ]
+    with ThreadPoolExecutor(max_workers=50) as executor:
+        summaries = list(
+            executor.map(lambda args: search_web_and_summarize(*args), args_list)
+        )
+
+    return summaries
 
 
 def generate_search_queries(
