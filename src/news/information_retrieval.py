@@ -155,6 +155,7 @@ def generate_search_queries(
             )
         return queries
 
+    logger.info("------------------GENERATING SEARCH QUERIES-----------")
     queries = get_queries(language_model, user_prompt, system_prompt)
     if include_question:
         queries.append(question.title)
@@ -202,6 +203,7 @@ def rate_article_relevancy(
         else:
             raise ValueError("The model did not return a valid answer.")
 
+    logger.info("------------------RATING ARTICLE RELEVANCIES-----------")
     return rate_relevancy(user_prompt, system_prompt)
 
 
@@ -299,12 +301,11 @@ def summarize_articles_for_question(
         response = language_model.query_model(
             user_prompt, system_prompt, max_output_tokens=10000
         )
-
-        logger.info(f"\n\n------------------LLM RESPONSE------------\n\n{response}")
         summary = re.search(r"Summary:\s*(.*)", response, re.DOTALL)
         if summary:
             return summary.group(1).strip()
         else:
             raise ValueError("The model did not return a valid summary.")
 
+    logger.info("------------------SUMMARIZING ARTICLES-----------")
     return get_summary(language_model, user_prompt, system_prompt)
