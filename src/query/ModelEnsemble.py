@@ -58,28 +58,14 @@ class ModelEnsemble:
                 for prompt_id in system_prompt_ids_rep
             ]
         user_prompt = prompt_builder.get_user_prompt(question)
+        user_prompts = [user_prompt for _ in query_list]
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(
-                    model.make_forecast,
-                    user_prompt,
-                    system_prompt,
+            results = list(
+                executor.map(
+                    lambda args: args[0].make_forecast(*args[1:]),
+                    zip(query_list, user_prompts, system_prompts),
                 )
-                for model, system_prompt in zip(query_list, system_prompts)
-            ]
-        results = []
-        for i, future in enumerate(futures):
-            result = future.result()
-            if result is not None:
-                results.append(
-                    (
-                        question.question_id,
-                        query_list[i].model_version,
-                        system_prompt_ids_rep[i],
-                        result[0],
-                        result[1],
-                    )
-                )
+            )
         return results
 
     def make_forecast(
