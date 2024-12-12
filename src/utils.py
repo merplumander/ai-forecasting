@@ -31,6 +31,7 @@ def setup_logger():
     logger.setLevel(logging.DEBUG)
     logger.handlers.clear()
     logger.addHandler(queue_handler)
+    logger.propagate = False
     return logger
 
 
