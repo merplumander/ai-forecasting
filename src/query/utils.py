@@ -1,10 +1,19 @@
+import logging
 import re
 from functools import wraps
 from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).parent.parent.parent
+from src.utils import LOGGING_PATH, ROOT
+
+logging.basicConfig(
+    filename=LOGGING_PATH,
+    filemode="a",
+    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+    datefmt="%D-%H:%M:%S",
+    level=logging.DEBUG,
+)
 
 
 def extract_probability(reply):
@@ -13,7 +22,7 @@ def extract_probability(reply):
     if match:
         probability = int(match.group(1))
     else:
-        raise ValueError("The model did not return a valid answer.")
+        raise ValueError("The model did not return a valid answer.", {"reply": reply})
     return probability
 
 
@@ -29,7 +38,12 @@ def retry_on_model_failure(max_retries=3):
                     return func(*args, **kwargs)
                 except Exception as e:
                     attempts += 1
+
                     print(
+                        f"Attempt {attempts} of model"
+                        f" {args[0].model_version} failed with error: {e.args[0]}"
+                    )
+                    logging.warning(
                         f"Attempt {attempts} of model"
                         f" {args[0].model_version} failed with error: {e}"
                     )

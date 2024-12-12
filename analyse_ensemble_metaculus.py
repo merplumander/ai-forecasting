@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt
 
 from src.analysis.utils import brier_score, load_raw_forecasting_data
 from src.dataset.dataset import MetaculusDataset
+from src.utils import ROOT
 
-ROOT = Path(__file__).parent
 # %%
 forecasts = load_raw_forecasting_data(ROOT / "forecasts")
 dataset = MetaculusDataset(

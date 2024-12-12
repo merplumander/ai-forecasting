@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from typing import List
@@ -6,6 +7,7 @@ from newspaper.article import Article
 from tqdm import tqdm
 
 from src.dataset.dataset import Question
+from src.news.news_api import get_gnews_articles, retrieve_gnews_articles_fulldata
 from src.query.language_models import GeminiModel, LanguageModel
 from src.query.PromptBuilder import (
     ArticleRelevancyPromptBuilder,
@@ -13,6 +15,40 @@ from src.query.PromptBuilder import (
     NewsRetrievalPromptBuilder,
 )
 from src.query.utils import retry_on_model_failure
+
+
+def search_web_and_summarize(
+    question: Question,
+    language_model: LanguageModel = None,
+    num_search_queries: int = 5,
+    max_words_per_query: int = 10,
+    include_question_as_query: bool = True,
+    max_results_per_query=10,
+    max_n_relevant_articles=10,
+):
+    queries = generate_search_queries(
+        question,
+        language_model=language_model,
+        num_queries=num_search_queries,
+        max_query_words=max_words_per_query,
+        include_question=include_question_as_query,
+    )
+
+    articles = get_gnews_articles(queries, max_results=max_results_per_query)
+    full_articles = retrieve_gnews_articles_fulldata(
+        articles, num_articles=max_results_per_query
+    )
+    relevant_articles = get_relevant_articles(
+        full_articles,
+        question,
+        n=max_n_relevant_articles,
+        language_model=language_model,
+    )
+    summary = summarize_articles_for_question(
+        relevant_articles, question, language_model=language_model
+    )
+
+    return summary
 
 
 def generate_search_queries(
@@ -128,6 +164,7 @@ def get_relevant_articles(
     question: Question,
     n: int = 5,
     min_score: float = 4.0,
+    article_save_path: str = None,
     article_cutoff: int = 1000,
     language_model: LanguageModel = None,
 ) -> List[Article]:
@@ -156,6 +193,13 @@ def get_relevant_articles(
     List[Article]
         List of relevant articles
     """
+    # check if save file exists. If yes load from file
+    if article_save_path is not None and os.path.exists(article_save_path):
+        with open(article_save_path, "r") as file:
+            scored_articles = json.load(file)
+            scored_articles.sort(key=lambda x: x[1], reverse=True)
+        return [article for article, _ in scored_articles[:n]]
+
     scored_articles = []
     for article in tqdm(articles):
         score = rate_article_relevancy(
@@ -166,7 +210,11 @@ def get_relevant_articles(
 
     if len(scored_articles) == 0:
         raise ValueError("No relevant articles found. Try lowering the min_score.")
+    if article_save_path is not None:
+        with open(article_save_path, "w") as file:
+            json.dump(scored_articles, file)
     scored_articles.sort(key=lambda x: x[1], reverse=True)
+
     return [article for article, _ in scored_articles[:n]]
 
 
@@ -197,11 +245,16 @@ def summarize_articles_for_question(
     system_prompt = ArticlesSummaryPromptBuilder.get_system_prompt()
     user_prompt = ArticlesSummaryPromptBuilder.get_user_prompt(question, articles)
 
+    print(f"System Prompt: {system_prompt}")
+    print(f"User Prompt: {user_prompt}")
+
     @retry_on_model_failure(max_retries=3)
     def get_summary(language_model, user_prompt, system_prompt):
         response = language_model.query_model(
             user_prompt, system_prompt, max_output_tokens=10000
         )
+
+        print("\n\n------------------LLM RESPONSE------------\n\n", response)
         summary = re.search(r"Summary:\s*(.*)", response, re.DOTALL)
         if summary:
             return summary.group(1).strip()
