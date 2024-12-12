@@ -14,6 +14,7 @@ from src.utils import logger
 
 
 class LanguageModel(ABC):
+    default_max_tokens = 600
 
     def __init__(self, model_version):
         self.model_version = model_version
@@ -99,7 +100,7 @@ class OpenAIModel(LanguageModel):
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("top_logprobs", 20)
-        kwargs.setdefault("max_tokens", 600)
+        kwargs.setdefault("max_tokens", self.default_max_tokens)
         logger.info(
             f"-----Querying model {self.model_version}-----\nUser"
             f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
@@ -141,7 +142,7 @@ class AnthropicModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "system", "messages"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 600)
+        kwargs.setdefault("max_tokens", self.default_max_tokens)
         logger.info(
             f"-----Querying model {self.model_version}-----\nUser"
             f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
@@ -183,7 +184,7 @@ class GeminiModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["response_logprobs"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_output_tokens", 600)
+        kwargs.setdefault("max_output_tokens", self.default_max_tokens)
         # kwargs.setdefault("logprobs", 5)
         config = genai.GenerationConfig(response_logprobs=False, **kwargs)
         model = genai.GenerativeModel(
@@ -226,7 +227,7 @@ class XAIModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 600)
+        kwargs.setdefault("max_tokens", self.default_max_tokens)
         logger.info(
             f"-----Querying model {self.model_version}-----\nUser"
             f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
@@ -271,7 +272,7 @@ class LLAMAModel(LanguageModel):
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("top_logprobs", 20)
-        kwargs.setdefault("max_tokens", 600)
+        kwargs.setdefault("max_tokens", self.default_max_tokens)
         logger.info(
             f"-----Querying model {self.model_version}-----\nUser"
             f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
@@ -316,7 +317,7 @@ class MistralModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 600)
+        kwargs.setdefault("max_tokens", self.default_max_tokens)
         logger.info(
             f"-----Querying model {self.model_version}-----\nUser"
             f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
@@ -361,7 +362,7 @@ class QwenModel(LanguageModel):
         assert not any(
             key in kwargs for key in ["model", "messages"]
         ), "Invalid keyword argument"
-        kwargs.setdefault("max_tokens", 600)
+        kwargs.setdefault("max_tokens", self.default_max_tokens)
         kwargs.setdefault("seed", random.randint(1, 10000))
         logger.info(
             f"-----Querying model {self.model_version}-----\nUser"
