@@ -262,6 +262,10 @@ def get_relevant_articles(
         with open(article_save_path, "w") as file:
             json.dump(scored_articles, file)
     scored_articles.sort(key=lambda x: x[1], reverse=True)
+    scores = []
+    for article, score in scored_articles:
+        scores.append(score)
+    print(f"{len(scores)} relevant articles found with scores of: {scores}")
 
     return [article for article, _ in scored_articles[:n]]
 
