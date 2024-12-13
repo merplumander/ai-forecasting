@@ -7,6 +7,8 @@ from googlenewsdecoder import new_decoderv1
 from newspaper.article import Article
 from tqdm import tqdm
 
+from src.utils import logger
+
 IRRETRIEVABLE_SITES = [
     "wsj.com",
     "english.alarabiya.net",
@@ -200,7 +202,7 @@ def retrieve_gnews_articles_fulldata(
             fulltext_articles.append(full_article)
             articles_added += 1
     if len(fulltext_articles) < len(retrieved_articles) * num_articles:
-        print(
+        logger.warning(
             f"Could only retrieve {len(fulltext_articles)} out of"
             f" {len(retrieved_articles) * num_articles}"
         )

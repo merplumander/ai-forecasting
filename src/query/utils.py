@@ -1,19 +1,9 @@
-import logging
 import re
 from functools import wraps
-from pathlib import Path
 
 import numpy as np
 
-from src.utils import LOGGING_PATH, ROOT
-
-logging.basicConfig(
-    filename=LOGGING_PATH,
-    filemode="a",
-    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
-    datefmt="%D-%H:%M:%S",
-    level=logging.DEBUG,
-)
+from src.utils import ROOT, logger
 
 
 def extract_probability(reply):
@@ -39,15 +29,14 @@ def retry_on_model_failure(max_retries=3):
                 except Exception as e:
                     attempts += 1
 
-                    print(
+                    logger.warning(
                         f"Attempt {attempts} of model"
-                        f" {args[0].model_version} failed with error: {e.args[0]}"
+                        f" {args[0].model_version} failed with error: {e.args[0]}",
+                        extra={"error": e},
                     )
-                    logging.warning(
-                        f"Attempt {attempts} of model"
-                        f" {args[0].model_version} failed with error: {e}"
-                    )
-            print(f"Model {args[0].model_version} failed after {max_retries} attempts.")
+            logger.error(
+                f"Model {args[0].model_version} failed after {max_retries} attempts."
+            )
             return None
 
         return wrapper
@@ -61,9 +50,11 @@ def aggregate_forecasting_explanations(
     lower, median, upper = np.quantile(probabilities, [0.05, 0.50, 0.95])
     confidence_range_string = f"[{lower}, {upper}]"
     newline = "\n"
-    reasonings = f"{newline.join(
+    reasonings = (
+        f"{newline.join(
         f"Reasoning {number}:\n{reasoning}\n"
         for number, reasoning in enumerate(reasonings))}"
+    )
     with open(ROOT / "prompts" / "combine_reasoning_prompt.txt", "r") as file:
         # Read the entire content of the file
         combine_prompt = file.read()

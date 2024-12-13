@@ -10,6 +10,7 @@ import openai
 from mistralai import Mistral
 
 from src.query.utils import extract_probability, retry_on_model_failure
+from src.utils import logger
 
 
 class LanguageModel(ABC):
@@ -22,7 +23,6 @@ class LanguageModel(ABC):
         self,
         forecasting_question: str,
         context: str,
-        verbose_reasoning: bool = False,
         **kwargs,
     ) -> Tuple[int, str]:
         """Make a forecast using the model.
@@ -33,8 +33,6 @@ class LanguageModel(ABC):
             Question to be forecasted.
         context : str
             System prompt and context.
-        verbose_reasoning : bool, optional
-            Print model output., by default False
 
         Returns
         -------
@@ -42,8 +40,6 @@ class LanguageModel(ABC):
             Tuple with forecasted answer and reasoning.
         """
         reply = self.query_model(forecasting_question, context, **kwargs)
-        if verbose_reasoning:
-            print("Given answer was:\n", reply)
         return (extract_probability(reply), reply)
 
     @abstractmethod
@@ -104,6 +100,10 @@ class OpenAIModel(LanguageModel):
         ), "Invalid keyword argument"
         kwargs.setdefault("top_logprobs", 20)
         kwargs.setdefault("max_tokens", 600)
+        logger.info(
+            f"-----Querying model {self.model_version}-----\nUser"
+            f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
+        )
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
@@ -113,6 +113,7 @@ class OpenAIModel(LanguageModel):
             logprobs=True,
             **kwargs,
         )
+        logger.info(f"Model response:\n{response.choices[0].message.content}")
         if return_details:
             return response
         else:
@@ -141,6 +142,10 @@ class AnthropicModel(LanguageModel):
             key in kwargs for key in ["model", "system", "messages"]
         ), "Invalid keyword argument"
         kwargs.setdefault("max_tokens", 600)
+        logger.info(
+            f"-----Querying model {self.model_version}-----\nUser"
+            f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
+        )
         response = self.client.messages.create(
             model=self.model_version,
             system=system_prompt,
@@ -149,6 +154,7 @@ class AnthropicModel(LanguageModel):
             ],
             **kwargs,
         )
+        logger.info(f"Model response:\n{response.content[0].text}")
         if return_details:
             return response
         else:
@@ -185,7 +191,12 @@ class GeminiModel(LanguageModel):
             generation_config=config,
             system_instruction=system_prompt,
         )
+        logger.info(
+            f"-----Querying model {self.model_version}-----\nUser"
+            f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
+        )
         response = model.generate_content(user_prompt)
+        logger.info(f"Model response:\n{response.text}")
         if return_details:
             return response
         else:
@@ -216,6 +227,10 @@ class XAIModel(LanguageModel):
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("max_tokens", 600)
+        logger.info(
+            f"-----Querying model {self.model_version}-----\nUser"
+            f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
+        )
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
@@ -224,6 +239,7 @@ class XAIModel(LanguageModel):
             ],
             **kwargs,
         )
+        logger.info(f"Model response:\n{response.choices[0].message.content}")
         if return_details:
             return response
         else:
@@ -256,6 +272,10 @@ class LLAMAModel(LanguageModel):
         ), "Invalid keyword argument"
         kwargs.setdefault("top_logprobs", 20)
         kwargs.setdefault("max_tokens", 600)
+        logger.info(
+            f"-----Querying model {self.model_version}-----\nUser"
+            f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
+        )
         response = self.client.chat.completions.create(
             model=self.model_version,
             messages=[
@@ -268,6 +288,7 @@ class LLAMAModel(LanguageModel):
             logprobs=True,
             **kwargs,
         )
+        logger.info(f"Model response:\n{response.choices[0].message.content}")
         if return_details:
             return response
         else:
@@ -296,6 +317,10 @@ class MistralModel(LanguageModel):
             key in kwargs for key in ["model", "messages", "logprobs"]
         ), "Invalid keyword argument"
         kwargs.setdefault("max_tokens", 600)
+        logger.info(
+            f"-----Querying model {self.model_version}-----\nUser"
+            f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
+        )
         response = self.client.chat.complete(
             model=self.model_version,
             messages=[
@@ -307,6 +332,7 @@ class MistralModel(LanguageModel):
             ],
             **kwargs,
         )
+        logger.info(f"Model response:\n{response.choices[0].message.content}")
         if return_details:
             return response
         else:
@@ -337,6 +363,10 @@ class QwenModel(LanguageModel):
         ), "Invalid keyword argument"
         kwargs.setdefault("max_tokens", 600)
         kwargs.setdefault("seed", random.randint(1, 10000))
+        logger.info(
+            f"-----Querying model {self.model_version}-----\nUser"
+            f" prompt:\n{user_prompt}\nSystem prompt:\n{system_prompt}"
+        )
         response = dashscope.Generation.call(
             model=self.model_version,
             messages=[
@@ -346,9 +376,10 @@ class QwenModel(LanguageModel):
             api_key=self.api_key,
             **kwargs,
         )
+        if response.output is None:
+            raise Exception(f"response.output is None. response is: {response}")
+        logger.info(f"Model response:\n{response.output.text}")
         if return_details:
             return response
         else:
-            if response.output is None:
-                raise Exception(f"response.output is None. response is: {response}")
             return response.output.text

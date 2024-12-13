@@ -16,6 +16,7 @@ from src.query.PromptBuilder import (
     NewsRetrievalPromptBuilder,
 )
 from src.query.utils import retry_on_model_failure
+from src.utils import logger
 
 
 def search_web_and_summarize(
@@ -40,7 +41,6 @@ def search_web_and_summarize(
         len(relevant_articles) < max_n_relevant_articles
         and results_per_query <= max_results_per_query
     ):
-        print("test")
         articles = get_gnews_articles(queries, max_results=results_per_query)
         relevant_urls = [a.url for a in relevant_articles]
         articles = [
@@ -155,6 +155,7 @@ def generate_search_queries(
             )
         return queries
 
+    logger.info("------------------GENERATING SEARCH QUERIES-----------")
     queries = get_queries(language_model, user_prompt, system_prompt)
     if include_question:
         queries.append(question.title)
@@ -202,6 +203,7 @@ def rate_article_relevancy(
         else:
             raise ValueError("The model did not return a valid answer.")
 
+    logger.info("------------------RATING ARTICLE RELEVANCIES-----------")
     return rate_relevancy(user_prompt, system_prompt)
 
 
@@ -291,20 +293,19 @@ def summarize_articles_for_question(
     system_prompt = ArticlesSummaryPromptBuilder.get_system_prompt()
     user_prompt = ArticlesSummaryPromptBuilder.get_user_prompt(question, articles)
 
-    print(f"System Prompt: {system_prompt}")
-    print(f"User Prompt: {user_prompt}")
+    logger.info(f"System Prompt: {system_prompt}")
+    logger.info(f"User Prompt: {user_prompt}")
 
     @retry_on_model_failure(max_retries=3)
     def get_summary(language_model, user_prompt, system_prompt):
         response = language_model.query_model(
             user_prompt, system_prompt, max_output_tokens=10000
         )
-
-        print("\n\n------------------LLM RESPONSE------------\n\n", response)
         summary = re.search(r"Summary:\s*(.*)", response, re.DOTALL)
         if summary:
             return summary.group(1).strip()
         else:
             raise ValueError("The model did not return a valid summary.")
 
+    logger.info("------------------SUMMARIZING ARTICLES-----------")
     return get_summary(language_model, user_prompt, system_prompt)
