@@ -14,7 +14,7 @@ from src.utils import logger
 
 
 class LanguageModel(ABC):
-    default_max_tokens = 600
+    default_max_tokens = 2000
 
     def __init__(self, model_version):
         self.model_version = model_version
