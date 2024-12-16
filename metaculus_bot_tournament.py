@@ -144,16 +144,20 @@ forecasts = ensemble.make_forecast_from_question(
     system_prompt_ids=system_prompt_ids,
 )
 
-with open(f"{save_folder}/{question_id}-forecasts.txt", "a") as file:
+
+forecasts_save_path = Path(f"{save_folder}/{question_id}-forecasts.txt")
+forecasts_save_path.parent.mkdir(exist_ok=True, parents=True)
+
+with open(forecasts_save_path, "a") as file:
     file.writelines(f"{str(forecast)}\n" for forecast in forecasts)
 
-with open(f"{save_folder}/{question_id}-question.txt", "w") as file:
-    json.dump(question, file, cls=QuestionJSONEncoder, indent=4)
+# with open(f"{save_folder}/{question_id}-question.txt", "w") as file:
+#     json.dump(question, file, cls=QuestionJSONEncoder, indent=4)
 
 # %%
-with open(f"{save_folder}/{question_id}-question.txt", "r") as file:
-    serialize_str = file.read()
-deserialized_q = json.loads(serialize_str, object_hook=question_json_decoder)
+# with open(f"{save_folder}/{question_id}-question.txt", "r") as file:
+#     serialize_str = file.read()
+# deserialized_q = json.loads(serialize_str, object_hook=question_json_decoder)
 #
 #
 #
