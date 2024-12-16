@@ -1,7 +1,7 @@
 import concurrent
 from typing import List, Tuple, Type
 
-from src.dataset.dataset import Question
+from src.dataset.dataset import EnsembleForecast, Question
 from src.query.language_models import LanguageModel
 from src.query.PromptBuilder import PromptBuilder
 
@@ -34,7 +34,7 @@ class ModelEnsemble:
         Returns
         -------
         List[Tuple[str, str, str, int, str]]
-            List of tuples containing the question id, model name, prompt id,forecasted answer and explanation.
+            List of tuples containing the question id, model name, prompt id, forecasted answer and explanation.
         """
         assert model_query_repeats > 0
         assert (
@@ -66,7 +66,14 @@ class ModelEnsemble:
                     zip(query_list, user_prompts, system_prompts),
                 )
             )
-        return results
+            if system_prompt_ids is not None:
+                for i, forecast in enumerate(results):
+                    forecast.prompt_id = system_prompt_ids_rep[i]
+        forecast = EnsembleForecast(
+            forecasts=results,
+            question_id=question.question_id,
+        )
+        return forecast
 
     def make_forecast(
         self,
@@ -111,6 +118,10 @@ class ModelEnsemble:
             ]
         results = []
         for i, future in enumerate(futures):
-            result = future.result()
-            results.append((query_list[i].model_version, result[0], result[1]))
-        return results
+            forecast = future.result()
+            forecast.model = query_list[i].model_version
+            results.append((forecast))
+        forecast = EnsembleForecast(
+            forecasts=results,
+        )
+        return forecast

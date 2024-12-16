@@ -3,8 +3,9 @@ import os
 from abc import ABC
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
+import numpy as np
 import pandas as pd
 
 from src.dataset.metaculus_api import get_all_metaculus_questions
@@ -30,18 +31,18 @@ class BinaryQuestion(Question):
     resolution: Optional[bool] = None
 
 
-class QuestionJSONEncoder(json.JSONEncoder):
+class DataJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
             return {"__type__": "datetime", "value": obj.isoformat()}
-        if isinstance(obj, Question):
-            data = asdict(obj)  #
+        if isinstance(obj, (Question, Forecast, EnsembleForecast)):
+            data = asdict(obj)
             data["__type__"] = obj.__class__.__name__  # Add type for reconstruction
             return data
         return super().default(obj)
 
 
-def question_json_decoder(d):
+def data_json_decoder(d):
     if "__type__" in d:
         obj_type = d.pop("__type__")  # Remove the __type__ key
         if obj_type == "datetime":
@@ -50,7 +51,37 @@ def question_json_decoder(d):
             return BinaryQuestion(**d)
         if obj_type == "Question":
             return Question(**d)
+        if obj_type == "Forecast":
+            return Forecast(**d)
+        if obj_type == "EnsembleForecast":
+            forecasts = [
+                Forecast(**f) for f in d["forecasts"]
+            ]  # Convert list of dicts to list of Forecasts
+            d["forecasts"] = forecasts
+            return EnsembleForecast(**d)
     return d
+
+
+@dataclass
+class Forecast(ABC):
+    prediction: Union[int, float]
+    reasoning: str
+    question_id: Optional[str] = None
+    model: Optional[str] = None
+    prompt_id: Optional[str] = None
+
+
+@dataclass
+class EnsembleForecast(ABC):
+    forecasts: list[Forecast]
+    question_id: Optional[str] = None
+
+    def prediction(self):
+        predicitons = self._raw_predictions()
+        return np.median(predicitons)
+
+    def _raw_predictions(self):
+        return [forecast.prediction for forecast in self.forecasts]
 
 
 class MetaculusDataset:

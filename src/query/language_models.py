@@ -9,6 +9,7 @@ import numpy as np
 import openai
 from mistralai import Mistral
 
+from src.dataset.dataset import Forecast
 from src.query.utils import extract_probability, retry_on_model_failure
 from src.utils import logger
 
@@ -41,7 +42,12 @@ class LanguageModel(ABC):
             Tuple with forecasted answer and reasoning.
         """
         reply = self.query_model(forecasting_question, context, **kwargs)
-        return (extract_probability(reply), reply)
+        forecast = Forecast(
+            prediction=extract_probability(reply),
+            reasoning=reply,
+            model=self.model_version,
+        )
+        return forecast
 
     @abstractmethod
     def query_model(
