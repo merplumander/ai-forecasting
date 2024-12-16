@@ -32,7 +32,7 @@ ENSEMBLE = ModelEnsemble(
     ]
 )
 with open(
-    ROOT / "promptsbinary_question_with_description_system_prompt.txt", "r"
+    ROOT / "prompts/binary_question_with_description_system_prompt.txt", "r"
 ) as file:
     # Read the entire content of the file
     CONTEXT = file.read()
@@ -51,18 +51,18 @@ def ask():
     if not question:
         return jsonify({"error": "No question provided."}), 400
 
-    responses = ENSEMBLE.make_forecast(
+    forecast = ENSEMBLE.make_forecast(
         question,
         CONTEXT,
     )
-    probabilities = [response[1] for response in responses if response[1] is not None]
+    probabilities = forecast._raw_predictions()
     lower, median, upper = np.quantile(probabilities, [0.05, 0.50, 0.95])
     # closest_response_idx = np.argmin(np.abs(median - probabilities))
     # explanation = responses[1][closest_response_idx]
     language_model = OpenAIModel(
         api_key=os.environ.get("OPENAI_API_KEY"), model_version="gpt-4o"
     )
-    reasonings = [response[1] for response in responses]
+    reasonings = [forecast.reasoning for forecast in forecast.forecasts]
     aggregated_explanation = aggregate_forecasting_explanations(
         question=question,
         reasonings=reasonings,
