@@ -26,7 +26,7 @@ class LanguageModel(ABC):
         forecasting_question: str,
         context: str,
         **kwargs,
-    ) -> Tuple[int, str]:
+    ) -> Forecast:
         """Make a forecast using the model.
 
         Parameters
@@ -35,11 +35,13 @@ class LanguageModel(ABC):
             Question to be forecasted.
         context : str
             System prompt and context.
+        **kwargs : dict
+            Additional keyword arguments passed to query_model.
 
         Returns
         -------
-        Tuple[int, str]
-            Tuple with forecasted answer and reasoning.
+        Forecast
+            A Forecast object containing the model's prediction and reasoning.
         """
         reply = self.query_model(forecasting_question, context, **kwargs)
         forecast = Forecast(
@@ -59,6 +61,10 @@ class LanguageModel(ABC):
     ) -> Union[str, Any]:
         """Query the model with a user and system prompt.
 
+        This method is used internally by make_forecast to generate the model's response,
+        which is then parsed into a Forecast object. It can also be used to query the model
+        directly for non-forecasting purposes.
+
         Parameters
         ----------
         user_prompt : str
@@ -70,6 +76,8 @@ class LanguageModel(ABC):
             this case the returned values have not the same format for all
             inherited classes). If False, only the response text is returned
             (i.e. same format for all inherited classed). , by default False
+        **kwargs : dict
+            Additional keyword arguments passed to the model's API.
 
         Returns
         -------

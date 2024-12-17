@@ -16,15 +16,19 @@ class ModelEnsemble:
         prompt_builder: Type[PromptBuilder],
         model_query_repeats: int = 1,
         system_prompt_ids: List[str] = None,
-    ) -> List[Tuple[str, str, int, str]]:
+    ) -> EnsembleForecast:
         """Make a forecast using the ensemble of models.
+
+        This method generates forecasts for a given question using each model in
+        the ensemble. It can use multiple system prompts and repeat queries to
+        generate a set of forecasts for each model.
 
         Parameters
         ----------
         question : Question
             Question to be forecasted.
         prompt_builder : Type[PromptBuilder]
-            Prompt builder to be used.
+            Prompt builder to be used for generating model prompts.
         model_query_repeats : int, optional
             How many times the prompt should be repeated for each model, by
             default 1
@@ -33,8 +37,8 @@ class ModelEnsemble:
 
         Returns
         -------
-        List[Tuple[str, str, str, int, str]]
-            List of tuples containing the question id, model name, prompt id, forecasted answer and explanation.
+        EnsembleForecast
+            A collection of forecasts from all models in the ensemble.
         """
         assert model_query_repeats > 0
         assert (
@@ -81,8 +85,11 @@ class ModelEnsemble:
         context: str,
         model_query_repeats=3,
         use_probabilities: bool = False,
-    ) -> List[Tuple[str, int, str]]:
+    ) -> EnsembleForecast:
         """Make a forecast using the ensemble of models.
+
+        This method is a simpler version of make_forecast_from_question that takes a raw
+        question string and context instead of a Question object.
 
         Parameters
         ----------
@@ -97,8 +104,8 @@ class ModelEnsemble:
 
         Returns
         -------
-        List[Tuple[str, int, str]]
-            List of tuples containing the model name, forecasted answer and explanation.
+        EnsembleForecast
+            A collection of forecasts from all models in the ensemble.
         """
         if use_probabilities:
             raise NotImplementedError(

@@ -64,6 +64,22 @@ def data_json_decoder(d):
 
 @dataclass
 class Forecast(ABC):
+    """A forecast made by a single model for a specific question.
+
+    Parameters
+    ----------
+    prediction : Union[int, float]
+        The numerical prediction value.
+    reasoning : str
+        The explanation or reasoning behind the prediction.
+    question_id : Optional[str], optional
+        The ID of the question being forecasted.
+    model : Optional[str], optional
+        The name/version of the model making the forecast.
+    prompt_id : Optional[str], optional
+        The ID of the prompt used to generate this forecast.
+    """
+
     prediction: Union[int, float]
     reasoning: str
     question_id: Optional[str] = None
@@ -73,14 +89,38 @@ class Forecast(ABC):
 
 @dataclass
 class EnsembleForecast(ABC):
+    """A collection of forecasts from multiple models for a specific question.
+
+    Parameters
+    ----------
+    forecasts : list[Forecast]
+        List of individual forecasts from different models.
+    question_id : Optional[str], optional
+        The ID of the question being forecasted.
+    """
+
     forecasts: list[Forecast]
     question_id: Optional[str] = None
 
     def prediction(self):
+        """Calculate the ensemble prediction using the median of all forecasts.
+
+        Returns
+        -------
+        float
+            The median prediction value across all forecasts in the ensemble.
+        """
         predicitons = self._raw_predictions()
         return np.median(predicitons)
 
     def _raw_predictions(self):
+        """Get a list of all individual prediction values.
+
+        Returns
+        -------
+        list
+            List of prediction values from all forecasts in the ensemble.
+        """
         return [forecast.prediction for forecast in self.forecasts]
 
 
