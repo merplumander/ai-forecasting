@@ -1,5 +1,6 @@
 .env
 .vscode/
+.app.log
 _test.py
 
 __pycache__/
