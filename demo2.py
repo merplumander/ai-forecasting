@@ -34,7 +34,7 @@ ENSEMBLE = ModelEnsemble(
     ]
 )
 with open(
-    ROOT / "promptsbinary_question_with_description_system_prompt.txt", "r"
+    ROOT / "prompts" / "binary_question_with_description_system_prompt.txt", "r"
 ) as file:
     # Read the entire content of the file
     CONTEXT = file.read()
