@@ -1,0 +1,31 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run demo app
+      run: |
+        python demo.py &
+        APP_PID=$!
+        sleep 4
+        if ps -p $APP_PID > /dev/null; then
+          echo "App is running successfully"
+          kill $APP_PID
+          exit 0
+        else
+          echo "App crashed"
+          exit 1
+        fi
