@@ -187,7 +187,6 @@ shellingham==1.5.4
 six==1.16.0
 sniffio==1.3.1
 soupsieve==2.6
--e git+ssh://git@github.com/merplumander/ai-forecasting.git@c05a7b98d2bd8b31184c5044e0ce7df6c69567ac#egg=src
 stack-data==0.6.3
 starlette==0.41.2
 terminado==0.18.1
