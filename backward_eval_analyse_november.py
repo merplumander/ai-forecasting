@@ -11,7 +11,7 @@ from src.dataset.dataset import MetaculusDataset
 from src.utils import ROOT
 
 # %%
-forecasts = load_raw_forecasting_data(ROOT / "forecasts")
+forecasts = load_raw_forecasting_data(ROOT / "forecasts" / "backward-evaluation")
 dataset = MetaculusDataset(
     path="ai-forecasting-datasets",
     file_infix="resolved_binary_from_2024_08_01_to_election_",
